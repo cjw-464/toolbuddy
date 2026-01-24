@@ -69,10 +69,32 @@ export const TOOL_CONDITIONS: { value: ToolCondition; label: string }[] = [
 	{ value: "needs-repair", label: "Needs Repair" },
 ];
 
-export interface Friend {
+// Friendship types
+export type FriendshipStatus = "pending" | "accepted" | "rejected" | "blocked";
+
+export interface Friendship {
 	id: string;
-	user_id: string;
-	friend_id: string;
-	status: "pending" | "accepted" | "declined";
+	requester_id: string;
+	addressee_id: string;
+	status: FriendshipStatus;
 	created_at: string;
+	updated_at: string;
+}
+
+export interface FriendProfile {
+	id: string;
+	email: string;
+	display_name: string | null;
+	avatar_url: string | null;
+	location: string | null;
+	friendship_id?: string;
+	friendship_status?: FriendshipStatus | null;
+	i_requested?: boolean;
+	lendable_tools_count?: number;
+}
+
+export interface FriendTool extends Tool {
+	images: ToolImage[];
+	owner_name: string | null;
+	owner_avatar: string | null;
 }
