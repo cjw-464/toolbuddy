@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { FriendRequestBadge } from "@/components/friends/FriendRequestBadge";
 
 const navItems = [
 	{ href: "/", label: "Home" },
@@ -19,19 +20,23 @@ export function BottomNav() {
 			<div className="mx-auto flex max-w-md items-center justify-around px-6 py-4">
 				{navItems.map((item) => {
 					const isActive = pathname === item.href;
+					const isFriends = item.href === "/friends";
+
 					return (
-						<Link
-							key={item.href}
-							href={item.href}
-							className={cn(
-								"text-sm transition-colors",
-								isActive
-									? "font-medium text-neutral-900"
-									: "text-neutral-500 hover:text-neutral-700"
-							)}
-						>
-							{item.label}
-						</Link>
+						<div key={item.href} className="relative flex items-center gap-1">
+							<Link
+								href={item.href}
+								className={cn(
+									"text-sm transition-colors",
+									isActive
+										? "font-medium text-neutral-900"
+										: "text-neutral-500 hover:text-neutral-700"
+								)}
+							>
+								{item.label}
+							</Link>
+							{isFriends && <FriendRequestBadge />}
+						</div>
 					);
 				})}
 			</div>
