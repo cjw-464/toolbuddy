@@ -8,10 +8,10 @@ interface FriendRequestBadgeProps {
 }
 
 export function FriendRequestBadge({ className }: FriendRequestBadgeProps) {
-	const { count, loading } = usePendingFriendRequestCount();
+	const { count, loading, error } = usePendingFriendRequestCount();
 
-	// Hide when loading or count is 0
-	if (loading || count === 0) {
+	// Hide when loading, error, or count is 0
+	if (loading || error || count === 0) {
 		return null;
 	}
 
