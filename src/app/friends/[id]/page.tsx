@@ -172,9 +172,10 @@ export default function FriendToolsPage() {
 							conditionLabels[tool.condition] || conditionLabels["good"];
 
 						return (
-							<div
+							<Link
 								key={tool.id}
-								className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5"
+								href={`/friends/${friendId}/tools/${tool.id}`}
+								className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
 							>
 								<div className="aspect-[4/3] overflow-hidden rounded-xl bg-neutral-100">
 									{primaryImage ? (
@@ -226,7 +227,7 @@ export default function FriendToolsPage() {
 										{condition.label}
 									</p>
 								</div>
-							</div>
+							</Link>
 						);
 					})}
 				</div>
