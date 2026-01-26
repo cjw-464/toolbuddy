@@ -4,6 +4,9 @@ export interface User {
 	display_name: string | null;
 	avatar_url: string | null;
 	location: string | null;
+	zip_code: string | null;
+	latitude: number | null;
+	longitude: number | null;
 	created_at: string;
 }
 
@@ -87,6 +90,9 @@ export interface FriendProfile {
 	display_name: string | null;
 	avatar_url: string | null;
 	location: string | null;
+	zip_code: string | null;
+	latitude: number | null;
+	longitude: number | null;
 	friendship_id?: string;
 	friendship_status?: FriendshipStatus | null;
 	i_requested?: boolean;

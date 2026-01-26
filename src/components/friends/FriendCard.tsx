@@ -1,13 +1,28 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { calculateDistance, formatDistance } from "@/lib/distance";
 import type { FriendProfile } from "@/types";
 
 interface FriendCardProps {
 	friend: FriendProfile;
+	userCoordinates?: { latitude: number; longitude: number } | null;
 	className?: string;
 }
 
-export function FriendCard({ friend, className }: FriendCardProps) {
+export function FriendCard({ friend, userCoordinates, className }: FriendCardProps) {
+	// Calculate distance if both users have coordinates
+	const distance =
+		userCoordinates?.latitude &&
+		userCoordinates?.longitude &&
+		friend.latitude &&
+		friend.longitude
+			? calculateDistance(
+					userCoordinates.latitude,
+					userCoordinates.longitude,
+					friend.latitude,
+					friend.longitude
+			  )
+			: null;
 	return (
 		<Link
 			href={`/friends/${friend.id}`}
@@ -46,8 +61,12 @@ export function FriendCard({ friend, className }: FriendCardProps) {
 				<h3 className="font-medium text-neutral-900 truncate">
 					{friend.display_name || friend.email}
 				</h3>
-				{friend.location && (
-					<p className="text-sm text-neutral-500 truncate">{friend.location}</p>
+				{(friend.location || distance !== null) && (
+					<p className="text-sm text-neutral-500 truncate">
+						{friend.location}
+						{friend.location && distance !== null && " · "}
+						{distance !== null && formatDistance(distance)}
+					</p>
 				)}
 				<p className="text-sm text-neutral-600">
 					{friend.lendable_tools_count || 0} tools available

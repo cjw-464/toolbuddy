@@ -109,7 +109,7 @@ export default function ToolDetailPage() {
 				</header>
 
 				<div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-					<ToolForm tool={tool} mode="edit" />
+					<ToolForm tool={tool} mode="edit" onEditSuccess={() => setIsEditing(false)} />
 				</div>
 
 				<BottomNav />

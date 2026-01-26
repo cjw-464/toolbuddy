@@ -20,9 +20,10 @@ import {
 interface ToolFormProps {
 	tool?: Tool & { images: ToolImage[] };
 	mode: "create" | "edit";
+	onEditSuccess?: () => void;
 }
 
-export function ToolForm({ tool, mode }: ToolFormProps) {
+export function ToolForm({ tool, mode, onEditSuccess }: ToolFormProps) {
 	const router = useRouter();
 	const { createTool, updateTool, deleteImage } = useTool(tool?.id);
 
@@ -103,7 +104,12 @@ export function ToolForm({ tool, mode }: ToolFormProps) {
 				setError(result.error);
 				setIsLoading(false);
 			} else {
-				router.push(`/tools/${tool.id}`);
+				setIsLoading(false);
+				if (onEditSuccess) {
+					onEditSuccess();
+				} else {
+					router.push(`/tools/${tool.id}`);
+				}
 			}
 		}
 	};

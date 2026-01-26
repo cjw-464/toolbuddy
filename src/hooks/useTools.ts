@@ -12,6 +12,7 @@ interface ToolWithImages extends Tool {
 interface UseToolsOptions {
 	search?: string;
 	category?: ToolCategory | "";
+	lendableOnly?: boolean;
 }
 
 export function useTools(options: UseToolsOptions = {}) {
@@ -49,6 +50,10 @@ export function useTools(options: UseToolsOptions = {}) {
 			query = query.eq("category", options.category);
 		}
 
+		if (options.lendableOnly) {
+			query = query.eq("is_lendable", true);
+		}
+
 		const { data, error } = await query;
 
 		if (error) {
@@ -58,7 +63,7 @@ export function useTools(options: UseToolsOptions = {}) {
 		}
 
 		setLoading(false);
-	}, [user, options.search, options.category]);
+	}, [user, options.search, options.category, options.lendableOnly]);
 
 	useEffect(() => {
 		if (authLoading) return;

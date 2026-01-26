@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useFriends } from "@/hooks/useFriends";
 import { useFriendRequests } from "@/hooks/useFriendRequests";
 import { useUserSearch } from "@/hooks/useUserSearch";
+import { useProfile } from "@/hooks/useProfile";
 import { FriendCard } from "@/components/friends/FriendCard";
 import { UserSearchResult } from "@/components/friends/UserSearchResult";
 import { Input } from "@/components/ui/Input";
@@ -12,9 +13,14 @@ import { Button } from "@/components/ui/Button";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 export default function FriendsPage() {
+	const { profile } = useProfile();
 	const { friends, loading: friendsLoading } = useFriends();
 	const { incomingCount } = useFriendRequests();
 	const { results, loading: searchLoading, search, sendRequest, clearResults } = useUserSearch();
+
+	const userCoordinates = profile?.latitude && profile?.longitude
+		? { latitude: profile.latitude, longitude: profile.longitude }
+		: null;
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearching, setIsSearching] = useState(false);
@@ -182,7 +188,7 @@ export default function FriendsPage() {
 					) : (
 						<div className="space-y-3">
 							{friends.map((friend) => (
-								<FriendCard key={friend.id} friend={friend} />
+								<FriendCard key={friend.id} friend={friend} userCoordinates={userCoordinates} />
 							))}
 						</div>
 					)}

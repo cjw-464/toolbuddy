@@ -6,8 +6,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { cn } from "@/lib/utils";
+import { calculateDistance, formatDistance } from "@/lib/distance";
 import type { ToolWithImages } from "@/types";
 
 const categoryLabels: Record<string, string> = {
@@ -33,6 +35,9 @@ interface FriendInfo {
 	id: string;
 	display_name: string | null;
 	avatar_url: string | null;
+	location: string | null;
+	latitude: number | null;
+	longitude: number | null;
 }
 
 export default function FriendToolDetailPage() {
@@ -41,11 +46,26 @@ export default function FriendToolDetailPage() {
 	const toolId = params.toolId as string;
 
 	const { user, loading: authLoading } = useAuth();
+	const { profile } = useProfile();
 	const [tool, setTool] = useState<ToolWithImages | null>(null);
 	const [friend, setFriend] = useState<FriendInfo | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [selectedImage, setSelectedImage] = useState(0);
+
+	// Calculate distance between current user and tool owner
+	const distance =
+		profile?.latitude &&
+		profile?.longitude &&
+		friend?.latitude &&
+		friend?.longitude
+			? calculateDistance(
+					profile.latitude,
+					profile.longitude,
+					friend.latitude,
+					friend.longitude
+			  )
+			: null;
 
 	const fetchToolAndFriend = useCallback(async () => {
 		if (!user) {
@@ -77,7 +97,7 @@ export default function FriendToolDetailPage() {
 		// Get friend's profile
 		const { data: profile, error: profileError } = await supabase
 			.from("profiles")
-			.select("id, display_name, avatar_url")
+			.select("id, display_name, avatar_url, location, latitude, longitude")
 			.eq("id", friendId)
 			.single();
 
@@ -302,12 +322,15 @@ export default function FriendToolDetailPage() {
 							</svg>
 						)}
 					</div>
-					<div>
+					<div className="flex-1">
 						<p className="text-sm font-medium text-neutral-900">
 							Owned by {friend.display_name || "Friend"}
 						</p>
 						<p className="text-xs text-neutral-500">
-							Contact them to arrange borrowing
+							{friend.location && <span>{friend.location}</span>}
+							{friend.location && distance !== null && " · "}
+							{distance !== null && <span>{formatDistance(distance)} away</span>}
+							{!friend.location && distance === null && "Contact them to arrange borrowing"}
 						</p>
 					</div>
 				</div>

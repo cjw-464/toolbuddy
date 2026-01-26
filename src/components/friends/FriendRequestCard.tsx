@@ -94,6 +94,9 @@ export function FriendRequestCard({
 					<h3 className="font-medium text-neutral-900 truncate">
 						{user.display_name || "No name"}
 					</h3>
+					{user.location && (
+						<p className="text-sm text-neutral-500 truncate">{user.location}</p>
+					)}
 					<p className="text-sm text-neutral-500 truncate">
 						{type === "incoming"
 							? "Wants to be your friend"
