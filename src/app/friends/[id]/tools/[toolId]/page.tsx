@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { BorrowRequestButton } from "@/components/borrow/BorrowRequestButton";
 import { cn } from "@/lib/utils";
 import { calculateDistance, formatDistance } from "@/lib/distance";
 import type { ToolWithImages } from "@/types";
@@ -333,6 +334,16 @@ export default function FriendToolDetailPage() {
 							{!friend.location && distance === null && "Contact them to arrange borrowing"}
 						</p>
 					</div>
+				</div>
+
+				{/* Borrow Request Button */}
+				<div className="mt-6">
+					<BorrowRequestButton
+						toolId={tool.id}
+						toolName={tool.name}
+						ownerId={friend.id}
+						ownerName={friend.display_name}
+					/>
 				</div>
 			</div>
 

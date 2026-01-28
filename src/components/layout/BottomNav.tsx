@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { FriendRequestBadge } from "@/components/friends/FriendRequestBadge";
+import { BorrowRequestBadge } from "@/components/borrow/BorrowRequestBadge";
 
 const navItems = [
-	{ href: "/", label: "Home" },
 	{ href: "/tools", label: "My Tools" },
-	{ href: "/friends", label: "Friends" },
+	{ href: "/friends", label: "Friends", badge: "friends" },
+	{ href: "/requests", label: "Requests", badge: "borrow" },
 	{ href: "/profile", label: "Profile" },
 ];
 
@@ -19,8 +20,7 @@ export function BottomNav() {
 		<nav className="fixed inset-x-0 bottom-0 border-t border-black/5 bg-white/90 backdrop-blur">
 			<div className="mx-auto flex max-w-md items-center justify-around px-6 py-4">
 				{navItems.map((item) => {
-					const isActive = pathname === item.href;
-					const isFriends = item.href === "/friends";
+					const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
 					return (
 						<div key={item.href} className="relative flex items-center gap-1">
@@ -35,7 +35,8 @@ export function BottomNav() {
 							>
 								{item.label}
 							</Link>
-							{isFriends && <FriendRequestBadge />}
+							{item.badge === "friends" && <FriendRequestBadge />}
+							{item.badge === "borrow" && <BorrowRequestBadge />}
 						</div>
 					);
 				})}

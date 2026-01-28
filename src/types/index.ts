@@ -103,4 +103,74 @@ export interface FriendTool extends Tool {
 	images: ToolImage[];
 	owner_name: string | null;
 	owner_avatar: string | null;
+	owner_latitude: number | null;
+	owner_longitude: number | null;
+	distance?: number | null; // Calculated distance in miles
 }
+
+// Borrow Request / Loan types
+export type BorrowRequestStatus =
+	| "pending"
+	| "approved"
+	| "declined"
+	| "active"
+	| "returned"
+	| "cancelled";
+
+export interface BorrowRequest {
+	id: string;
+	tool_id: string;
+	borrower_id: string;
+	lender_id: string;
+	status: BorrowRequestStatus;
+	message: string | null;
+	requested_at: string;
+	responded_at: string | null;
+	picked_up_at: string | null;
+	returned_at: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+// Extended types with joined data for UI
+export interface BorrowRequestWithTool extends BorrowRequest {
+	tool: Tool & { images: ToolImage[] };
+}
+
+export interface BorrowRequestWithDetails extends BorrowRequest {
+	tool: Tool & { images: ToolImage[] };
+	borrower: User;
+	lender: User;
+}
+
+// For incoming requests (as lender)
+export interface IncomingBorrowRequest extends BorrowRequest {
+	tool: Tool & { images: ToolImage[] };
+	borrower: User;
+}
+
+// For outgoing requests (as borrower)
+export interface OutgoingBorrowRequest extends BorrowRequest {
+	tool: Tool & { images: ToolImage[] };
+	lender: User;
+}
+
+// Active loan (approved or active status)
+export interface ActiveLoan extends BorrowRequest {
+	tool: Tool & { images: ToolImage[] };
+	borrower: User;
+	lender: User;
+}
+
+export const BORROW_REQUEST_STATUSES: {
+	value: BorrowRequestStatus;
+	label: string;
+	description: string;
+}[] = [
+	{ value: "pending", label: "Pending", description: "Awaiting response" },
+	{ value: "approved", label: "Approved", description: "Ready for pickup" },
+	{ value: "declined", label: "Declined", description: "Request declined" },
+	{ value: "active", label: "Active", description: "Currently borrowed" },
+	{ value: "returned", label: "Returned", description: "Tool returned" },
+	{ value: "cancelled", label: "Cancelled", description: "Request cancelled" },
+];
