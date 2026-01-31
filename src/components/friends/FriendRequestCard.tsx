@@ -92,7 +92,7 @@ export function FriendRequestCard({
 
 				<div className="flex-1 min-w-0">
 					<h3 className="font-medium text-neutral-900 truncate">
-						{user.display_name || "No name"}
+						{user.display_name || user.email}
 					</h3>
 					{user.location && (
 						<p className="text-sm text-neutral-500 truncate">{user.location}</p>

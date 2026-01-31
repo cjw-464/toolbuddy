@@ -109,6 +109,42 @@ export function useAllFriendsTools(options: UseAllFriendsToolsOptions = {}) {
 			return;
 		}
 
+		// Get tool IDs to check loan status
+		const toolIds = (toolsData || []).map((t) => t.id);
+
+		// Fetch active loans for these tools
+		const { data: activeLoans } = await supabase
+			.from("borrow_requests")
+			.select("tool_id, status, borrower:profiles!borrow_requests_borrower_id_fkey(display_name, email)")
+			.in("tool_id", toolIds.length > 0 ? toolIds : ["no-match"])
+			.in("status", ["approved", "active"]);
+
+		// Fetch waitlist counts for these tools
+		const { data: waitlistData } = await supabase
+			.from("borrow_requests")
+			.select("tool_id")
+			.in("tool_id", toolIds.length > 0 ? toolIds : ["no-match"])
+			.eq("status", "waitlisted");
+
+		// Create maps for quick lookup
+		const loanMap = new Map(
+			(activeLoans || []).map((loan) => {
+				const borrower = Array.isArray(loan.borrower) ? loan.borrower[0] : loan.borrower;
+				return [
+					loan.tool_id,
+					{
+						status: loan.status,
+						borrower_name: borrower?.display_name || borrower?.email || null,
+					},
+				];
+			})
+		);
+
+		const waitlistCounts = new Map<string, number>();
+		(waitlistData || []).forEach((w) => {
+			waitlistCounts.set(w.tool_id, (waitlistCounts.get(w.tool_id) || 0) + 1);
+		});
+
 		// Add owner info and calculate distance
 		let toolsWithOwner: FriendTool[] = (toolsData || []).map((tool) => {
 			const owner = profileMap.get(tool.owner_id);
@@ -126,6 +162,8 @@ export function useAllFriendsTools(options: UseAllFriendsToolsOptions = {}) {
 				);
 			}
 
+			const loan = loanMap.get(tool.id);
+
 			return {
 				...tool,
 				owner_name: owner?.display_name || null,
@@ -133,6 +171,9 @@ export function useAllFriendsTools(options: UseAllFriendsToolsOptions = {}) {
 				owner_latitude: ownerLat,
 				owner_longitude: ownerLng,
 				distance,
+				is_on_loan: !!loan,
+				current_borrower_name: loan?.borrower_name || null,
+				waitlist_count: waitlistCounts.get(tool.id) || 0,
 			};
 		});
 

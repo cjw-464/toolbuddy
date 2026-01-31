@@ -101,9 +101,9 @@ export function UserSearchResult({
 
 			<div className="flex-1 min-w-0">
 				<h3 className="font-medium text-neutral-900 truncate">
-					{user.display_name || "No name"}
+					{user.display_name || user.email}
 				</h3>
-				<p className="text-sm text-neutral-500 truncate">{user.email}</p>
+				{user.display_name && <p className="text-sm text-neutral-500 truncate">{user.email}</p>}
 				{error && <p className="text-sm text-red-600 mt-1">{error}</p>}
 			</div>
 

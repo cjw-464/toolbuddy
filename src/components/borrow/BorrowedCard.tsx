@@ -1,15 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { ActiveLoan } from "@/types";
 
 interface BorrowedCardProps {
 	loan: ActiveLoan;
+	onReturnTool?: (requestId: string) => Promise<{ error: string | null }>;
 }
 
-export function BorrowedCard({ loan }: BorrowedCardProps) {
+export function BorrowedCard({ loan, onReturnTool }: BorrowedCardProps) {
+	const [isReturning, setIsReturning] = useState(false);
+	const [showConfirm, setShowConfirm] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const handleReturnTool = async () => {
+		if (!onReturnTool) return;
+		setIsReturning(true);
+		setError(null);
+		const { error } = await onReturnTool(loan.id);
+		if (error) {
+			setError(error);
+			setIsReturning(false);
+		}
+		setShowConfirm(false);
+	};
 	const primaryImage =
 		loan.tool.images?.find((img) => img.is_primary) || loan.tool.images?.[0];
 
@@ -35,6 +53,7 @@ export function BorrowedCard({ loan }: BorrowedCardProps) {
 	};
 
 	return (
+		<>
 		<div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
 			<div className="flex gap-4">
 				{/* Tool Image */}
@@ -109,20 +128,29 @@ export function BorrowedCard({ loan }: BorrowedCardProps) {
 					</div>
 
 					{/* Status & Duration */}
-					<div className="mt-2 flex items-center gap-2">
-						<span
-							className={cn(
-								"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-								loan.status === "active"
-									? "bg-blue-50 text-blue-700"
-									: "bg-green-50 text-green-700"
+					<div className="mt-2 flex flex-col gap-1">
+						<div className="flex items-center gap-2">
+							<span
+								className={cn(
+									"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+									loan.status === "active"
+										? "bg-blue-50 text-blue-700"
+										: "bg-green-50 text-green-700"
+								)}
+							>
+								{loan.status === "active" ? "In your possession" : "Ready for pickup"}
+							</span>
+							{loan.status === "active" && (
+								<span className="text-xs text-neutral-500">{getDuration()}</span>
 							)}
-						>
-							{loan.status === "active" ? "In your possession" : "Ready for pickup"}
-						</span>
-						{loan.status === "active" && (
-							<span className="text-xs text-neutral-500">{getDuration()}</span>
-						)}
+						</div>
+						<p className="text-xs text-neutral-500">
+							{loan.status === "active" && loan.picked_up_at
+								? `Picked up ${formatDate(loan.picked_up_at)}`
+								: loan.responded_at
+									? `Approved ${formatDate(loan.responded_at)}`
+									: null}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -137,15 +165,63 @@ export function BorrowedCard({ loan }: BorrowedCardProps) {
 				</div>
 			)}
 
-			{/* Return reminder for active loans */}
-			{loan.status === "active" && (
-				<div className="mt-3 rounded-lg bg-neutral-50 p-3">
-					<p className="text-sm text-neutral-600">
-						Remember to return this tool when you&apos;re done.{" "}
-						{loan.lender.display_name || "The owner"} will mark it as returned.
-					</p>
+			{error && (
+				<div className="mt-3 rounded-lg bg-red-50 p-2 text-sm text-red-600">
+					{error}
+				</div>
+			)}
+
+			{/* Return button for active loans */}
+			{loan.status === "active" && onReturnTool && (
+				<div className="mt-4">
+					<Button
+						variant="primary"
+						onClick={() => setShowConfirm(true)}
+						className="w-full"
+					>
+						Return Tool
+					</Button>
 				</div>
 			)}
 		</div>
+
+		{/* Confirmation Modal */}
+		{showConfirm && (
+			<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+				<div
+					className="absolute inset-0 bg-black/50"
+					onClick={() => setShowConfirm(false)}
+				/>
+				<div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+					<h3 className="text-lg font-semibold text-neutral-900">
+						Return Tool
+					</h3>
+					<p className="mt-2 text-neutral-600">
+						Are you returning <span className="font-medium">{loan.tool.name}</span> to{" "}
+						<span className="font-medium">{loan.lender.display_name || "the owner"}</span>?
+					</p>
+
+					<div className="mt-6 flex gap-3">
+						<Button
+							variant="secondary"
+							onClick={() => setShowConfirm(false)}
+							className="flex-1"
+							disabled={isReturning}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="primary"
+							onClick={handleReturnTool}
+							isLoading={isReturning}
+							className="flex-1"
+						>
+							Yes, Return
+						</Button>
+					</div>
+				</div>
+			</div>
+		)}
+		</>
 	);
 }

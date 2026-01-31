@@ -106,6 +106,9 @@ export interface FriendTool extends Tool {
 	owner_latitude: number | null;
 	owner_longitude: number | null;
 	distance?: number | null; // Calculated distance in miles
+	is_on_loan?: boolean; // Whether tool is currently loaned out
+	current_borrower_name?: string | null; // Name of current borrower if on loan
+	waitlist_count?: number; // Number of people waiting for this tool
 }
 
 // Borrow Request / Loan types
@@ -115,7 +118,8 @@ export type BorrowRequestStatus =
 	| "declined"
 	| "active"
 	| "returned"
-	| "cancelled";
+	| "cancelled"
+	| "waitlisted";
 
 export interface BorrowRequest {
 	id: string;
@@ -173,4 +177,5 @@ export const BORROW_REQUEST_STATUSES: {
 	{ value: "active", label: "Active", description: "Currently borrowed" },
 	{ value: "returned", label: "Returned", description: "Tool returned" },
 	{ value: "cancelled", label: "Cancelled", description: "Request cancelled" },
+	{ value: "waitlisted", label: "Waitlisted", description: "Waiting for tool to be available" },
 ];

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useToolBorrowStatus } from "@/hooks/useToolBorrowStatus";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { BorrowRequestButton } from "@/components/borrow/BorrowRequestButton";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,14 @@ export default function FriendToolDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [selectedImage, setSelectedImage] = useState(0);
+
+	const {
+		isCurrentlyBorrowed,
+		canJoinWaitlist,
+		existingRequest,
+		waitlistCount,
+		loading: statusLoading,
+	} = useToolBorrowStatus(toolId, friendId);
 
 	// Calculate distance between current user and tool owner
 	const distance =
@@ -284,9 +293,27 @@ export default function FriendToolDetailPage() {
 					>
 						{condition.label}
 					</span>
-					<span className="inline-flex items-center rounded-full bg-[#FFCC00]/20 px-3 py-1 text-sm font-medium text-[#333333]">
-						Available to borrow
-					</span>
+					{statusLoading ? (
+						<span className="inline-flex items-center rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-500">
+							Checking availability...
+						</span>
+					) : isCurrentlyBorrowed ? (
+						<span className="inline-flex items-center rounded-full bg-neutral-100 px-3 py-1 text-sm font-medium text-neutral-600">
+							Currently on loan{waitlistCount > 0 ? ` · ${waitlistCount} waiting` : ""}
+						</span>
+					) : existingRequest?.status === "pending" ? (
+						<span className="inline-flex items-center rounded-full bg-yellow-50 px-3 py-1 text-sm font-medium text-yellow-700">
+							Request pending
+						</span>
+					) : existingRequest?.status === "waitlisted" ? (
+						<span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700">
+							On waitlist
+						</span>
+					) : (
+						<span className="inline-flex items-center rounded-full bg-[#FFCC00]/20 px-3 py-1 text-sm font-medium text-[#333333]">
+							Available to borrow
+						</span>
+					)}
 				</div>
 
 				{tool.notes && (

@@ -289,6 +289,52 @@ export function useBorrowRequests() {
 		return { error: null };
 	};
 
+	// Return tool (as borrower) - transitions from active to returned
+	const returnTool = async (requestId: string) => {
+		if (!user) return { error: "Not authenticated" };
+
+		const supabase = createClient();
+
+		const { error } = await supabase
+			.from("borrow_requests")
+			.update({
+				status: "returned" as BorrowRequestStatus,
+				returned_at: new Date().toISOString(),
+			})
+			.eq("id", requestId)
+			.eq("borrower_id", user.id)
+			.eq("status", "active");
+
+		if (error) {
+			return { error: error.message };
+		}
+
+		await fetchRequests();
+		return { error: null };
+	};
+
+	// Join waitlist for a tool that's currently on loan
+	const joinWaitlist = async (toolId: string, lenderId: string, message?: string) => {
+		if (!user) return { error: "Not authenticated" };
+
+		const supabase = createClient();
+
+		const { error } = await supabase.from("borrow_requests").insert({
+			tool_id: toolId,
+			borrower_id: user.id,
+			lender_id: lenderId,
+			message: message || null,
+			status: "waitlisted" as BorrowRequestStatus,
+		});
+
+		if (error) {
+			return { error: error.message };
+		}
+
+		await fetchRequests();
+		return { error: null };
+	};
+
 	// Count of pending incoming requests (for badge)
 	const pendingIncomingCount = incoming.filter((r) => r.status === "pending").length;
 
@@ -305,5 +351,7 @@ export function useBorrowRequests() {
 		cancelRequest,
 		markAsPickedUp,
 		markAsReturned,
+		returnTool,
+		joinWaitlist,
 	};
 }

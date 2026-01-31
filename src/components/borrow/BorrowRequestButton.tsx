@@ -28,30 +28,38 @@ export function BorrowRequestButton({
 
 	const {
 		canRequest,
+		canJoinWaitlist,
 		existingRequest,
 		isCurrentlyBorrowed,
+		waitlistPosition,
+		waitlistCount,
 		loading: statusLoading,
 		refetch: refetchStatus,
 	} = useToolBorrowStatus(toolId, ownerId);
 
-	const { createRequest } = useBorrowRequests();
+	const { createRequest, joinWaitlist } = useBorrowRequests();
+	const [isWaitlistMode, setIsWaitlistMode] = useState(false);
 
-	const handleOpenModal = () => {
+	const handleOpenModal = (waitlist = false) => {
 		setMessage("");
 		setSubmitError(null);
 		setSubmitSuccess(false);
+		setIsWaitlistMode(waitlist);
 		setIsModalOpen(true);
 	};
 
 	const handleCloseModal = () => {
 		setIsModalOpen(false);
+		setIsWaitlistMode(false);
 	};
 
 	const handleSubmit = async () => {
 		setIsSubmitting(true);
 		setSubmitError(null);
 
-		const { error } = await createRequest(toolId, ownerId, message || undefined);
+		const { error } = isWaitlistMode
+			? await joinWaitlist(toolId, ownerId, message || undefined)
+			: await createRequest(toolId, ownerId, message || undefined);
 
 		if (error) {
 			setSubmitError(error);
@@ -66,36 +74,48 @@ export function BorrowRequestButton({
 		// Close modal after a short delay
 		setTimeout(() => {
 			setIsModalOpen(false);
+			setIsWaitlistMode(false);
 		}, 1500);
 	};
 
 	// Determine button state and text
 	const getButtonState = () => {
 		if (statusLoading) {
-			return { disabled: true, text: "Loading...", variant: "secondary" as const };
+			return { disabled: true, text: "Loading...", variant: "secondary" as const, isWaitlist: false };
 		}
 
 		if (existingRequest) {
 			if (existingRequest.status === "pending") {
-				return { disabled: true, text: "Request Pending", variant: "secondary" as const };
+				return { disabled: true, text: "Request Pending", variant: "secondary" as const, isWaitlist: false };
 			}
 			if (existingRequest.status === "approved") {
-				return { disabled: true, text: "Approved - Ready for Pickup", variant: "secondary" as const };
+				return { disabled: true, text: "Approved - Ready for Pickup", variant: "secondary" as const, isWaitlist: false };
 			}
 			if (existingRequest.status === "active") {
-				return { disabled: true, text: "Currently Borrowing", variant: "secondary" as const };
+				return { disabled: true, text: "Currently Borrowing", variant: "secondary" as const, isWaitlist: false };
 			}
-		}
-
-		if (isCurrentlyBorrowed) {
-			return { disabled: true, text: "Currently Unavailable", variant: "secondary" as const };
+			if (existingRequest.status === "waitlisted") {
+				return {
+					disabled: true,
+					text: `On Waitlist (#${waitlistPosition})`,
+					variant: "secondary" as const,
+					isWaitlist: false,
+				};
+			}
 		}
 
 		if (canRequest) {
-			return { disabled: false, text: "Request to Borrow", variant: "primary" as const };
+			return { disabled: false, text: "Request to Borrow", variant: "primary" as const, isWaitlist: false };
 		}
 
-		return { disabled: true, text: "Unavailable", variant: "secondary" as const };
+		if (canJoinWaitlist) {
+			const waitlistText = waitlistCount > 0
+				? `Join Waitlist (${waitlistCount} waiting)`
+				: "Join Waitlist";
+			return { disabled: false, text: waitlistText, variant: "secondary" as const, isWaitlist: true };
+		}
+
+		return { disabled: true, text: "Unavailable", variant: "secondary" as const, isWaitlist: false };
 	};
 
 	const buttonState = getButtonState();
@@ -103,7 +123,7 @@ export function BorrowRequestButton({
 	return (
 		<>
 			<Button
-				onClick={handleOpenModal}
+				onClick={() => handleOpenModal(buttonState.isWaitlist)}
 				disabled={buttonState.disabled}
 				variant={buttonState.variant}
 				className="w-full"
@@ -140,32 +160,52 @@ export function BorrowRequestButton({
 									</svg>
 								</div>
 								<h3 className="text-lg font-semibold text-neutral-900">
-									Request Sent!
+									{isWaitlistMode ? "Added to Waitlist!" : "Request Sent!"}
 								</h3>
 								<p className="mt-1 text-neutral-600">
-									{ownerName || "The owner"} will be notified of your request.
+									{isWaitlistMode
+										? "You'll be notified when the tool becomes available."
+										: `${ownerName || "The owner"} will be notified of your request.`}
 								</p>
 							</div>
 						) : (
 							<>
 								<h2 className="text-xl font-semibold text-neutral-900">
-									Request to Borrow
+									{isWaitlistMode ? "Join Waitlist" : "Request to Borrow"}
 								</h2>
 								<p className="mt-1 text-neutral-600">
-									Request to borrow <span className="font-medium">{toolName}</span> from{" "}
-									{ownerName || "your friend"}.
+									{isWaitlistMode ? (
+										<>
+											<span className="font-medium">{toolName}</span> is currently on loan.
+											Join the waitlist to be notified when it&apos;s available.
+											{waitlistCount > 0 && (
+												<span className="block mt-1 text-sm">
+													{waitlistCount} {waitlistCount === 1 ? "person is" : "people are"} already waiting.
+												</span>
+											)}
+										</>
+									) : (
+										<>
+											Request to borrow <span className="font-medium">{toolName}</span> from{" "}
+											{ownerName || "your friend"}.
+										</>
+									)}
 								</p>
 
 								<div className="mt-4">
 									<Textarea
 										label="Message (optional)"
-										placeholder="Add a message to your request..."
+										placeholder={isWaitlistMode
+											? "Add a note about when you'd need it..."
+											: "Add a message to your request..."}
 										value={message}
 										onChange={(e) => setMessage(e.target.value)}
 										rows={3}
 									/>
 									<p className="mt-1 text-xs text-neutral-500">
-										Let them know when you need it or any other details.
+										{isWaitlistMode
+											? "You'll be notified when the tool becomes available."
+											: "Let them know when you need it or any other details."}
 									</p>
 								</div>
 
@@ -190,7 +230,7 @@ export function BorrowRequestButton({
 										className="flex-1"
 										isLoading={isSubmitting}
 									>
-										Send Request
+										{isWaitlistMode ? "Join Waitlist" : "Send Request"}
 									</Button>
 								</div>
 							</>

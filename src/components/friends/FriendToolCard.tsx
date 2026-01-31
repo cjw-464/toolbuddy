@@ -74,9 +74,20 @@ export function FriendToolCard({ tool, className }: FriendToolCardProps) {
 			</div>
 
 			<div className="mt-3">
-				<p className="text-xs font-medium text-neutral-500">
-					{categoryLabels[tool.category] || tool.category}
-				</p>
+				<div className="flex items-center justify-between gap-2">
+					<p className="text-xs font-medium text-neutral-500">
+						{categoryLabels[tool.category] || tool.category}
+					</p>
+					{tool.is_on_loan ? (
+						<span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
+							On loan
+						</span>
+					) : (
+						<span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">
+							Available
+						</span>
+					)}
+				</div>
 				<h3 className="mt-0.5 text-lg font-semibold text-neutral-900 line-clamp-1">
 					{tool.name}
 				</h3>
@@ -94,6 +105,11 @@ export function FriendToolCard({ tool, className }: FriendToolCardProps) {
 					<span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-current" />
 					{condition.label}
 				</p>
+				{tool.waitlist_count && tool.waitlist_count > 0 ? (
+					<p className="mt-1 text-xs text-neutral-500">
+						{tool.waitlist_count} {tool.waitlist_count === 1 ? "person" : "people"} waiting
+					</p>
+				) : null}
 
 				{/* Owner info */}
 				<div className="mt-3 flex items-center gap-2 border-t border-neutral-100 pt-3">

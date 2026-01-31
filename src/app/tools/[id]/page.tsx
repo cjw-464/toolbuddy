@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 import { useTool } from "@/hooks/useTool";
 import { ToolForm } from "@/components/tools/ToolForm";
 import { Button } from "@/components/ui/Button";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { cn } from "@/lib/utils";
+import type { User } from "@/types";
 
 const categoryLabels: Record<string, string> = {
 	"power-tools": "Power Tools",
@@ -39,6 +41,35 @@ export default function ToolDetailPage() {
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [selectedImage, setSelectedImage] = useState(0);
+	const [activeLoan, setActiveLoan] = useState<{ borrower: User; status: string; picked_up_at: string | null } | null>(null);
+
+	// Check if tool is currently loaned out
+	const checkActiveLoan = useCallback(async () => {
+		if (!toolId) return;
+
+		const supabase = createClient();
+
+		const { data } = await supabase
+			.from("borrow_requests")
+			.select("*, borrower:profiles!borrow_requests_borrower_id_fkey(*)")
+			.eq("tool_id", toolId)
+			.in("status", ["approved", "active"])
+			.single();
+
+		if (data) {
+			setActiveLoan({
+				borrower: data.borrower,
+				status: data.status,
+				picked_up_at: data.picked_up_at,
+			});
+		} else {
+			setActiveLoan(null);
+		}
+	}, [toolId]);
+
+	useEffect(() => {
+		checkActiveLoan();
+	}, [checkActiveLoan]);
 
 	const handleDelete = async () => {
 		setIsDeleting(true);
@@ -227,11 +258,16 @@ export default function ToolDetailPage() {
 					>
 						{condition.label}
 					</span>
-					{tool.is_lendable && (
+					{activeLoan ? (
+						<span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+							{activeLoan.status === "active" ? "Loaned to" : "Approved for"}{" "}
+							{activeLoan.borrower.display_name || activeLoan.borrower.email}
+						</span>
+					) : tool.is_lendable ? (
 						<span className="inline-flex items-center rounded-full bg-[#FFCC00]/20 px-3 py-1 text-sm font-medium text-[#333333]">
 							Available to lend
 						</span>
-					)}
+					) : null}
 				</div>
 
 				{tool.notes && (

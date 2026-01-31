@@ -44,6 +44,11 @@ const statusConfig = {
 		description: "Tool has been returned",
 		color: "bg-neutral-100 text-neutral-600",
 	},
+	waitlisted: {
+		label: "Waitlisted",
+		description: "Waiting for tool to be available",
+		color: "bg-purple-50 text-purple-700",
+	},
 };
 
 export function OutgoingRequestCard({

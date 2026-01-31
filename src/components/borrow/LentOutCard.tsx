@@ -126,22 +126,31 @@ export function LentOutCard({ loan, onMarkReturned }: LentOutCardProps) {
 						</div>
 
 						{/* Status & Duration */}
-						<div className="mt-2 flex items-center gap-2">
-							<span
-								className={cn(
-									"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-									loan.status === "active"
-										? "bg-blue-50 text-blue-700"
-										: "bg-green-50 text-green-700"
-								)}
-							>
-								{loan.status === "active" ? "Active" : "Ready for pickup"}
-							</span>
-							{loan.status === "active" && (
-								<span className="text-xs text-neutral-500">
-									{getDuration()}
+						<div className="mt-2 flex flex-col gap-1">
+							<div className="flex items-center gap-2">
+								<span
+									className={cn(
+										"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+										loan.status === "active"
+											? "bg-blue-50 text-blue-700"
+											: "bg-green-50 text-green-700"
+									)}
+								>
+									{loan.status === "active" ? "Active" : "Ready for pickup"}
 								</span>
-							)}
+								{loan.status === "active" && (
+									<span className="text-xs text-neutral-500">
+										{getDuration()}
+									</span>
+								)}
+							</div>
+							<p className="text-xs text-neutral-500">
+								{loan.status === "active" && loan.picked_up_at
+									? `Picked up ${formatDate(loan.picked_up_at)}`
+									: loan.responded_at
+										? `Approved ${formatDate(loan.responded_at)}`
+										: null}
+							</p>
 						</div>
 					</div>
 				</div>

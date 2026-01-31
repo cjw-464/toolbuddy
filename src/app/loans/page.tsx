@@ -16,7 +16,7 @@ export default function LoansPage() {
 
 	const { lentOut, borrowed, lentOutCount, borrowedCount, loading, error } =
 		useLoans();
-	const { markAsReturned } = useBorrowRequests();
+	const { markAsReturned, returnTool } = useBorrowRequests();
 
 	return (
 		<main className="min-h-screen bg-neutral-50 px-5 py-8">
@@ -193,7 +193,11 @@ export default function LoansPage() {
 					) : (
 						<div className="space-y-4">
 							{borrowed.map((loan) => (
-								<BorrowedCard key={loan.id} loan={loan} />
+								<BorrowedCard
+									key={loan.id}
+									loan={loan}
+									onReturnTool={returnTool}
+								/>
 							))}
 						</div>
 					)}
