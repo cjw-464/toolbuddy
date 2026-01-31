@@ -116,7 +116,7 @@ export function useUserSearch() {
 
 		if (error) {
 			if (error.code === "23505") {
-				return { error: "Friend request already sent" };
+				return { error: "Buddy request already sent" };
 			}
 			return { error: error.message };
 		}

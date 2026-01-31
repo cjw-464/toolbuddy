@@ -15,6 +15,7 @@ export function useBorrowRequests() {
 	const [outgoing, setOutgoing] = useState<OutgoingBorrowRequest[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [waitlistPositions, setWaitlistPositions] = useState<Map<string, { position: number; total: number }>>(new Map());
 
 	const fetchRequests = useCallback(async () => {
 		if (!user) {
@@ -35,7 +36,7 @@ export function useBorrowRequests() {
 			.from("borrow_requests")
 			.select("*")
 			.or(`borrower_id.eq.${user.id},lender_id.eq.${user.id}`)
-			.in("status", ["pending", "approved", "active"])
+			.in("status", ["pending", "approved", "active", "waitlisted"])
 			.order("requested_at", { ascending: false });
 
 		if (fetchError) {
@@ -138,8 +139,51 @@ export function useBorrowRequests() {
 			})
 			.filter(Boolean) as OutgoingBorrowRequest[];
 
+		// Fetch waitlist data for user's waitlisted requests
+		const userWaitlistedToolIds = outgoingWithDetails
+			.filter((r) => r.status === "waitlisted")
+			.map((r) => r.tool_id);
+
+		let waitlistData: Map<string, { position: number; total: number }> = new Map();
+
+		if (userWaitlistedToolIds.length > 0) {
+			// Get all waitlisted requests for tools user is waitlisted for
+			const { data: allWaitlisted } = await supabase
+				.from("borrow_requests")
+				.select("id, tool_id, requested_at")
+				.in("tool_id", userWaitlistedToolIds)
+				.eq("status", "waitlisted")
+				.order("requested_at", { ascending: true });
+
+			if (allWaitlisted) {
+				// Group by tool_id and calculate positions
+				const toolWaitlists = new Map<string, typeof allWaitlisted>();
+				for (const w of allWaitlisted) {
+					const existing = toolWaitlists.get(w.tool_id) || [];
+					existing.push(w);
+					toolWaitlists.set(w.tool_id, existing);
+				}
+
+				// Calculate position for user's requests
+				for (const req of outgoingWithDetails) {
+					if (req.status === "waitlisted") {
+						const toolWaitlist = toolWaitlists.get(req.tool_id) || [];
+						const position = toolWaitlist.findIndex((w) => w.id === req.id) + 1;
+						waitlistData.set(req.id, {
+							position,
+							total: toolWaitlist.length,
+						});
+					}
+				}
+			}
+		}
+
+		// Note: waitlisted incoming requests are already included in incomingWithDetails
+		// since the main fetch includes status "waitlisted"
+
 		setIncoming(incomingWithDetails);
 		setOutgoing(outgoingWithDetails);
+		setWaitlistPositions(waitlistData);
 		setLoading(false);
 	}, [user]);
 
@@ -241,20 +285,56 @@ export function useBorrowRequests() {
 		return { error: null };
 	};
 
-	// Mark as picked up (as borrower) - transitions from approved to active
-	const markAsPickedUp = async (requestId: string) => {
+	// Confirm pickup - both parties must confirm for handshake to complete
+	// When both confirm, status changes from "approved" to "active"
+	const confirmPickup = async (requestId: string, role: "borrower" | "lender") => {
 		if (!user) return { error: "Not authenticated" };
 
 		const supabase = createClient();
 
+		// First, get the current request to check confirmation status
+		const { data: request, error: fetchError } = await supabase
+			.from("borrow_requests")
+			.select("*")
+			.eq("id", requestId)
+			.single();
+
+		if (fetchError || !request) {
+			return { error: fetchError?.message || "Request not found" };
+		}
+
+		// Verify user is the correct party
+		if (role === "borrower" && request.borrower_id !== user.id) {
+			return { error: "Not authorized" };
+		}
+		if (role === "lender" && request.lender_id !== user.id) {
+			return { error: "Not authorized" };
+		}
+
+		const now = new Date().toISOString();
+		const updateData: Record<string, unknown> = {};
+
+		if (role === "borrower") {
+			updateData.borrower_confirmed_pickup_at = now;
+		} else {
+			updateData.lender_confirmed_pickup_at = now;
+		}
+
+		// Check if the other party has already confirmed
+		const otherPartyConfirmed = role === "borrower"
+			? request.lender_confirmed_pickup_at
+			: request.borrower_confirmed_pickup_at;
+
+		// If both parties have now confirmed, complete the handshake
+		if (otherPartyConfirmed) {
+			updateData.status = "active" as BorrowRequestStatus;
+			updateData.picked_up_at = now;
+		}
+
 		const { error } = await supabase
 			.from("borrow_requests")
-			.update({
-				status: "active" as BorrowRequestStatus,
-				picked_up_at: new Date().toISOString(),
-			})
+			.update(updateData)
 			.eq("id", requestId)
-			.eq("borrower_id", user.id)
 			.eq("status", "approved");
 
 		if (error) {
@@ -265,52 +345,103 @@ export function useBorrowRequests() {
 		return { error: null };
 	};
 
-	// Mark as returned (as lender) - transitions from active to returned
-	const markAsReturned = async (requestId: string) => {
+	// Confirm return - both parties must confirm for handshake to complete
+	// When both confirm, status changes from "active" to "returned"
+	const confirmReturn = async (requestId: string, role: "borrower" | "lender") => {
 		if (!user) return { error: "Not authenticated" };
 
 		const supabase = createClient();
 
+		// First, get the current request to check confirmation status
+		const { data: request, error: fetchError } = await supabase
+			.from("borrow_requests")
+			.select("*")
+			.eq("id", requestId)
+			.single();
+
+		if (fetchError || !request) {
+			return { error: fetchError?.message || "Request not found" };
+		}
+
+		// Verify user is the correct party
+		if (role === "borrower" && request.borrower_id !== user.id) {
+			return { error: "Not authorized" };
+		}
+		if (role === "lender" && request.lender_id !== user.id) {
+			return { error: "Not authorized" };
+		}
+
+		const now = new Date().toISOString();
+		const updateData: Record<string, unknown> = {};
+
+		if (role === "borrower") {
+			updateData.borrower_confirmed_return_at = now;
+		} else {
+			updateData.lender_confirmed_return_at = now;
+		}
+
+		// Check if the other party has already confirmed
+		const otherPartyConfirmed = role === "borrower"
+			? request.lender_confirmed_return_at
+			: request.borrower_confirmed_return_at;
+
+		// If both parties have now confirmed, complete the handshake
+		const isReturnComplete = otherPartyConfirmed;
+		if (isReturnComplete) {
+			updateData.status = "returned" as BorrowRequestStatus;
+			updateData.returned_at = now;
+		}
+
 		const { error } = await supabase
 			.from("borrow_requests")
-			.update({
-				status: "returned" as BorrowRequestStatus,
-				returned_at: new Date().toISOString(),
-			})
+			.update(updateData)
 			.eq("id", requestId)
-			.eq("lender_id", user.id)
 			.eq("status", "active");
 
 		if (error) {
 			return { error: error.message };
+		}
+
+		// If return is complete, promote the first waitlisted user to pending
+		if (isReturnComplete) {
+			const { data: firstWaitlisted } = await supabase
+				.from("borrow_requests")
+				.select("id")
+				.eq("tool_id", request.tool_id)
+				.eq("status", "waitlisted")
+				.order("requested_at", { ascending: true })
+				.limit(1)
+				.single();
+
+			if (firstWaitlisted) {
+				await supabase
+					.from("borrow_requests")
+					.update({
+						status: "pending" as BorrowRequestStatus,
+						requested_at: now, // Update to now so lender sees it as fresh
+					})
+					.eq("id", firstWaitlisted.id);
+			}
 		}
 
 		await fetchRequests();
 		return { error: null };
 	};
 
-	// Return tool (as borrower) - transitions from active to returned
+	// Legacy functions - now call the handshake versions
+	// Mark as picked up (as borrower) - now uses handshake
+	const markAsPickedUp = async (requestId: string) => {
+		return confirmPickup(requestId, "borrower");
+	};
+
+	// Mark as returned (as lender) - now uses handshake
+	const markAsReturned = async (requestId: string) => {
+		return confirmReturn(requestId, "lender");
+	};
+
+	// Return tool (as borrower) - now uses handshake
 	const returnTool = async (requestId: string) => {
-		if (!user) return { error: "Not authenticated" };
-
-		const supabase = createClient();
-
-		const { error } = await supabase
-			.from("borrow_requests")
-			.update({
-				status: "returned" as BorrowRequestStatus,
-				returned_at: new Date().toISOString(),
-			})
-			.eq("id", requestId)
-			.eq("borrower_id", user.id)
-			.eq("status", "active");
-
-		if (error) {
-			return { error: error.message };
-		}
-
-		await fetchRequests();
-		return { error: null };
+		return confirmReturn(requestId, "borrower");
 	};
 
 	// Join waitlist for a tool that's currently on loan
@@ -335,8 +466,34 @@ export function useBorrowRequests() {
 		return { error: null };
 	};
 
+	// Cancel/leave waitlist (as borrower)
+	const cancelWaitlist = async (requestId: string) => {
+		if (!user) return { error: "Not authenticated" };
+
+		const supabase = createClient();
+
+		const { error } = await supabase
+			.from("borrow_requests")
+			.delete()
+			.eq("id", requestId)
+			.eq("borrower_id", user.id)
+			.eq("status", "waitlisted");
+
+		if (error) {
+			return { error: error.message };
+		}
+
+		await fetchRequests();
+		return { error: null };
+	};
+
 	// Count of pending incoming requests (for badge)
 	const pendingIncomingCount = incoming.filter((r) => r.status === "pending").length;
+
+	// Helper to get waitlist info for a specific request
+	const getWaitlistInfo = (requestId: string) => {
+		return waitlistPositions.get(requestId) || { position: 0, total: 0 };
+	};
 
 	return {
 		incoming,
@@ -349,9 +506,16 @@ export function useBorrowRequests() {
 		approveRequest,
 		declineRequest,
 		cancelRequest,
+		// Handshake confirmation functions
+		confirmPickup,
+		confirmReturn,
+		// Legacy functions (still work, use handshake internally)
 		markAsPickedUp,
 		markAsReturned,
 		returnTool,
 		joinWaitlist,
+		cancelWaitlist,
+		// Waitlist info
+		getWaitlistInfo,
 	};
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { IncomingBorrowRequest } from "@/types";
@@ -94,7 +95,10 @@ export function IncomingRequestCard({
 					</h3>
 
 					{/* Borrower info */}
-					<div className="mt-1 flex items-center gap-2">
+					<Link
+						href={`/friends/${request.borrower_id}`}
+						className="mt-1 flex items-center gap-2 group"
+					>
 						<div className="flex h-5 w-5 items-center justify-center rounded-full bg-neutral-100">
 							{request.borrower.avatar_url ? (
 								<img
@@ -118,10 +122,10 @@ export function IncomingRequestCard({
 								</svg>
 							)}
 						</div>
-						<span className="text-sm text-neutral-600 truncate">
+						<span className="text-sm text-neutral-600 truncate group-hover:underline">
 							{request.borrower.display_name || request.borrower.email}
 						</span>
-					</div>
+					</Link>
 
 					<p className="mt-1 text-xs text-neutral-500">
 						Requested {formatDate(request.requested_at)}
@@ -179,6 +183,14 @@ export function IncomingRequestCard({
 				<div className="mt-3">
 					<span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
 						Currently borrowed
+					</span>
+				</div>
+			)}
+
+			{request.status === "waitlisted" && (
+				<div className="mt-3">
+					<span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700">
+						On waitlist
 					</span>
 				</div>
 			)}

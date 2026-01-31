@@ -5,13 +5,15 @@ import Link from "next/link";
 import { useBorrowRequests } from "@/hooks/useBorrowRequests";
 import { IncomingRequestCard } from "@/components/borrow/IncomingRequestCard";
 import { OutgoingRequestCard } from "@/components/borrow/OutgoingRequestCard";
+import { LentOutCard } from "@/components/borrow/LentOutCard";
+import { BorrowedCard } from "@/components/borrow/BorrowedCard";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { cn } from "@/lib/utils";
 
-type TabType = "incoming" | "outgoing";
+type TabType = "lent-out" | "borrowed";
 
 export default function RequestsPage() {
-	const [activeTab, setActiveTab] = useState<TabType>("incoming");
+	const [activeTab, setActiveTab] = useState<TabType>("lent-out");
 
 	const {
 		incoming,
@@ -23,47 +25,64 @@ export default function RequestsPage() {
 		declineRequest,
 		cancelRequest,
 		markAsPickedUp,
+		cancelWaitlist,
+		getWaitlistInfo,
+		confirmPickup,
+		confirmReturn,
 	} = useBorrowRequests();
 
-	// Filter to show only pending for incoming, and pending/approved/active for outgoing
-	const pendingIncoming = incoming.filter((r) => r.status === "pending");
-	const activeIncoming = incoming.filter((r) => r.status === "approved" || r.status === "active");
-	const pendingOutgoing = outgoing.filter((r) => r.status === "pending");
-	const activeOutgoing = outgoing.filter((r) => r.status === "approved" || r.status === "active");
+	// Filter requests by status
+	// Lent Out tab (user is lender)
+	const pendingLentOut = incoming.filter((r) => r.status === "pending");
+	const activeLentOut = incoming.filter((r) => r.status === "approved" || r.status === "active");
+	const waitlistedLentOut = incoming.filter((r) => r.status === "waitlisted");
+
+	// Borrowed tab (user is borrower)
+	const pendingBorrowed = outgoing.filter((r) => r.status === "pending");
+	const activeBorrowed = outgoing.filter((r) => r.status === "approved" || r.status === "active");
+	const waitlistedBorrowed = outgoing.filter((r) => r.status === "waitlisted");
+
+	// Handlers for lender confirmations
+	const handleLenderConfirmPickup = async (requestId: string) => {
+		return confirmPickup(requestId, "lender");
+	};
+
+	const handleLenderConfirmReturn = async (requestId: string) => {
+		return confirmReturn(requestId, "lender");
+	};
+
+	// Handlers for borrower confirmations
+	const handleBorrowerConfirmPickup = async (requestId: string) => {
+		return confirmPickup(requestId, "borrower");
+	};
+
+	const handleBorrowerConfirmReturn = async (requestId: string) => {
+		return confirmReturn(requestId, "borrower");
+	};
 
 	return (
 		<main className="min-h-screen bg-neutral-50 px-5 py-8">
 			<header className="mb-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold text-neutral-900">
-							Borrow Requests
-						</h1>
-						<p className="mt-0.5 text-sm text-neutral-600">
-							Manage your lending and borrowing
-						</p>
-					</div>
-					<Link
-						href="/loans"
-						className="rounded-lg bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
-					>
-						Active Loans
-					</Link>
-				</div>
+				<h1 className="text-2xl font-semibold text-neutral-900">
+					Handshakes
+				</h1>
+				<p className="mt-0.5 text-sm text-neutral-600">
+					Manage your lending and borrowing
+				</p>
 			</header>
 
 			{/* Tabs */}
 			<div className="mb-6 flex gap-2 rounded-xl bg-neutral-100 p-1">
 				<button
-					onClick={() => setActiveTab("incoming")}
+					onClick={() => setActiveTab("lent-out")}
 					className={cn(
 						"relative flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
-						activeTab === "incoming"
+						activeTab === "lent-out"
 							? "bg-white text-neutral-900 shadow-sm"
 							: "text-neutral-600 hover:text-neutral-900"
 					)}
 				>
-					Incoming
+					Lent Out
 					{pendingIncomingCount > 0 && (
 						<span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
 							{pendingIncomingCount}
@@ -71,18 +90,18 @@ export default function RequestsPage() {
 					)}
 				</button>
 				<button
-					onClick={() => setActiveTab("outgoing")}
+					onClick={() => setActiveTab("borrowed")}
 					className={cn(
 						"flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
-						activeTab === "outgoing"
+						activeTab === "borrowed"
 							? "bg-white text-neutral-900 shadow-sm"
 							: "text-neutral-600 hover:text-neutral-900"
 					)}
 				>
-					Outgoing
-					{pendingOutgoing.length > 0 && (
+					Borrowed
+					{pendingBorrowed.length > 0 && (
 						<span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-yellow-500 px-1.5 text-xs font-medium text-white">
-							{pendingOutgoing.length}
+							{pendingBorrowed.length}
 						</span>
 					)}
 				</button>
@@ -116,17 +135,17 @@ export default function RequestsPage() {
 				</div>
 			)}
 
-			{/* Incoming Tab */}
-			{!loading && activeTab === "incoming" && (
+			{/* Lent Out Tab */}
+			{!loading && activeTab === "lent-out" && (
 				<div className="space-y-6">
 					{/* Pending Requests */}
-					{pendingIncoming.length > 0 && (
+					{pendingLentOut.length > 0 && (
 						<section>
 							<h2 className="mb-3 text-sm font-medium text-neutral-700">
-								Pending Requests ({pendingIncoming.length})
+								Pending Requests ({pendingLentOut.length})
 							</h2>
 							<div className="space-y-3">
-								{pendingIncoming.map((request) => (
+								{pendingLentOut.map((request) => (
 									<IncomingRequestCard
 										key={request.id}
 										request={request}
@@ -139,13 +158,32 @@ export default function RequestsPage() {
 					)}
 
 					{/* Active Loans (as lender) */}
-					{activeIncoming.length > 0 && (
+					{activeLentOut.length > 0 && (
 						<section>
 							<h2 className="mb-3 text-sm font-medium text-neutral-700">
-								Active Loans ({activeIncoming.length})
+								Active Loans ({activeLentOut.length})
 							</h2>
 							<div className="space-y-3">
-								{activeIncoming.map((request) => (
+								{activeLentOut.map((request) => (
+									<LentOutCard
+										key={request.id}
+										loan={request}
+										onConfirmPickup={handleLenderConfirmPickup}
+										onConfirmReturn={handleLenderConfirmReturn}
+									/>
+								))}
+							</div>
+						</section>
+					)}
+
+					{/* Waitlist */}
+					{waitlistedLentOut.length > 0 && (
+						<section>
+							<h2 className="mb-3 text-sm font-medium text-neutral-700">
+								Waitlist ({waitlistedLentOut.length})
+							</h2>
+							<div className="space-y-3">
+								{waitlistedLentOut.map((request) => (
 									<IncomingRequestCard
 										key={request.id}
 										request={request}
@@ -158,7 +196,7 @@ export default function RequestsPage() {
 					)}
 
 					{/* Empty State */}
-					{pendingIncoming.length === 0 && activeIncoming.length === 0 && (
+					{pendingLentOut.length === 0 && activeLentOut.length === 0 && waitlistedLentOut.length === 0 && (
 						<div className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
 							<div className="mb-4 rounded-full bg-neutral-100 p-4">
 								<svg
@@ -176,27 +214,27 @@ export default function RequestsPage() {
 								</svg>
 							</div>
 							<h3 className="text-lg font-semibold text-neutral-900">
-								No incoming requests
+								Nothing lent out
 							</h3>
 							<p className="mt-1 text-neutral-600">
-								When friends request to borrow your tools, they&apos;ll appear here.
+								When buddies request to borrow your tools, they&apos;ll appear here.
 							</p>
 						</div>
 					)}
 				</div>
 			)}
 
-			{/* Outgoing Tab */}
-			{!loading && activeTab === "outgoing" && (
+			{/* Borrowed Tab */}
+			{!loading && activeTab === "borrowed" && (
 				<div className="space-y-6">
 					{/* Pending Requests */}
-					{pendingOutgoing.length > 0 && (
+					{pendingBorrowed.length > 0 && (
 						<section>
 							<h2 className="mb-3 text-sm font-medium text-neutral-700">
-								Awaiting Response ({pendingOutgoing.length})
+								Awaiting Response ({pendingBorrowed.length})
 							</h2>
 							<div className="space-y-3">
-								{pendingOutgoing.map((request) => (
+								{pendingBorrowed.map((request) => (
 									<OutgoingRequestCard
 										key={request.id}
 										request={request}
@@ -208,27 +246,52 @@ export default function RequestsPage() {
 						</section>
 					)}
 
-					{/* Active Borrowing */}
-					{activeOutgoing.length > 0 && (
+					{/* Active Loans (as borrower) */}
+					{activeBorrowed.length > 0 && (
 						<section>
 							<h2 className="mb-3 text-sm font-medium text-neutral-700">
-								Currently Borrowing ({activeOutgoing.length})
+								Currently Borrowing ({activeBorrowed.length})
 							</h2>
 							<div className="space-y-3">
-								{activeOutgoing.map((request) => (
-									<OutgoingRequestCard
+								{activeBorrowed.map((request) => (
+									<BorrowedCard
 										key={request.id}
-										request={request}
-										onCancel={cancelRequest}
-										onMarkPickedUp={markAsPickedUp}
+										loan={request}
+										onConfirmPickup={handleBorrowerConfirmPickup}
+										onConfirmReturn={handleBorrowerConfirmReturn}
 									/>
 								))}
+							</div>
+						</section>
+					)}
+
+					{/* Waitlisted */}
+					{waitlistedBorrowed.length > 0 && (
+						<section>
+							<h2 className="mb-3 text-sm font-medium text-neutral-700">
+								On Waitlist ({waitlistedBorrowed.length})
+							</h2>
+							<div className="space-y-3">
+								{waitlistedBorrowed.map((request) => {
+									const waitlistInfo = getWaitlistInfo(request.id);
+									return (
+										<OutgoingRequestCard
+											key={request.id}
+											request={request}
+											onCancel={cancelRequest}
+											onMarkPickedUp={markAsPickedUp}
+											onCancelWaitlist={cancelWaitlist}
+											waitlistPosition={waitlistInfo.position}
+											waitlistTotal={waitlistInfo.total}
+										/>
+									);
+								})}
 							</div>
 						</section>
 					)}
 
 					{/* Empty State */}
-					{pendingOutgoing.length === 0 && activeOutgoing.length === 0 && (
+					{pendingBorrowed.length === 0 && activeBorrowed.length === 0 && waitlistedBorrowed.length === 0 && (
 						<div className="flex flex-col items-center justify-center rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
 							<div className="mb-4 rounded-full bg-neutral-100 p-4">
 								<svg
@@ -246,10 +309,10 @@ export default function RequestsPage() {
 								</svg>
 							</div>
 							<h3 className="text-lg font-semibold text-neutral-900">
-								No outgoing requests
+								Nothing borrowed
 							</h3>
 							<p className="mt-1 text-neutral-600">
-								Browse your friends&apos; tools and request to borrow.
+								Browse your buddies&apos; tools and request to borrow.
 							</p>
 							<Link
 								href="/friends"

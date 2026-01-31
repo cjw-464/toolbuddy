@@ -137,7 +137,7 @@ export function FriendToolCard({ tool, className }: FriendToolCardProps) {
 						)}
 					</div>
 					<span className="text-xs text-neutral-500 truncate flex-1">
-						{tool.owner_name || "Friend"}
+						{tool.owner_name || "Buddy"}
 					</span>
 					{tool.distance !== null && tool.distance !== undefined && (
 						<span className="text-xs font-medium text-neutral-600">

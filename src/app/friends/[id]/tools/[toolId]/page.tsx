@@ -207,7 +207,7 @@ export default function FriendToolDetailPage() {
 							d="M15 19l-7-7 7-7"
 						/>
 					</svg>
-					Back to {friend.display_name || "friend"}&apos;s tools
+					Back to {friend.display_name || "buddy"}&apos;s tools
 				</Link>
 			</header>
 
@@ -331,7 +331,7 @@ export default function FriendToolDetailPage() {
 						{friend.avatar_url ? (
 							<img
 								src={friend.avatar_url}
-								alt={friend.display_name || "Friend"}
+								alt={friend.display_name || "Buddy"}
 								className="h-10 w-10 rounded-full object-cover"
 							/>
 						) : (
@@ -352,7 +352,7 @@ export default function FriendToolDetailPage() {
 					</div>
 					<div className="flex-1">
 						<p className="text-sm font-medium text-neutral-900">
-							Owned by {friend.display_name || "Friend"}
+							Owned by {friend.display_name || "Buddy"}
 						</p>
 						<p className="text-xs text-neutral-500">
 							{friend.location && <span>{friend.location}</span>}

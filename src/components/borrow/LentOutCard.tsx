@@ -5,30 +5,51 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import type { ActiveLoan } from "@/types";
+import type { ActiveLoan, IncomingBorrowRequest } from "@/types";
 
 interface LentOutCardProps {
-	loan: ActiveLoan;
-	onMarkReturned: (requestId: string) => Promise<{ error: string | null }>;
+	loan: ActiveLoan | IncomingBorrowRequest;
+	onConfirmPickup?: (requestId: string) => Promise<{ error: string | null }>;
+	onConfirmReturn?: (requestId: string) => Promise<{ error: string | null }>;
 }
 
-export function LentOutCard({ loan, onMarkReturned }: LentOutCardProps) {
-	const [isMarking, setIsMarking] = useState(false);
-	const [showConfirm, setShowConfirm] = useState(false);
+export function LentOutCard({ loan, onConfirmPickup, onConfirmReturn }: LentOutCardProps) {
+	const [isConfirming, setIsConfirming] = useState(false);
+	const [showPickupConfirm, setShowPickupConfirm] = useState(false);
+	const [showReturnConfirm, setShowReturnConfirm] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	// Check handshake status
+	const borrowerConfirmedPickup = !!loan.borrower_confirmed_pickup_at;
+	const lenderConfirmedPickup = !!loan.lender_confirmed_pickup_at;
+	const borrowerConfirmedReturn = !!loan.borrower_confirmed_return_at;
+	const lenderConfirmedReturn = !!loan.lender_confirmed_return_at;
 
 	const primaryImage =
 		loan.tool.images?.find((img) => img.is_primary) || loan.tool.images?.[0];
 
-	const handleMarkReturned = async () => {
-		setIsMarking(true);
+	const handleConfirmPickup = async () => {
+		if (!onConfirmPickup) return;
+		setIsConfirming(true);
 		setError(null);
-		const { error } = await onMarkReturned(loan.id);
+		const { error } = await onConfirmPickup(loan.id);
 		if (error) {
 			setError(error);
-			setIsMarking(false);
 		}
-		setShowConfirm(false);
+		setIsConfirming(false);
+		setShowPickupConfirm(false);
+	};
+
+	const handleConfirmReturn = async () => {
+		if (!onConfirmReturn) return;
+		setIsConfirming(true);
+		setError(null);
+		const { error } = await onConfirmReturn(loan.id);
+		if (error) {
+			setError(error);
+		}
+		setIsConfirming(false);
+		setShowReturnConfirm(false);
 	};
 
 	const formatDate = (dateString: string | null) => {
@@ -37,8 +58,23 @@ export function LentOutCard({ loan, onMarkReturned }: LentOutCardProps) {
 		return date.toLocaleDateString("en-US", {
 			month: "short",
 			day: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
 		});
 	};
+
+	// Get the latest transaction info
+	const getLatestTransaction = () => {
+		if (loan.picked_up_at) {
+			return { label: "Picked up", date: loan.picked_up_at };
+		}
+		if (loan.responded_at) {
+			return { label: "Approved", date: loan.responded_at };
+		}
+		return { label: "Requested", date: loan.requested_at };
+	};
+
+	const latestTransaction = getLatestTransaction();
 
 	const getDuration = () => {
 		const start = loan.picked_up_at || loan.responded_at || loan.requested_at;
@@ -96,7 +132,10 @@ export function LentOutCard({ loan, onMarkReturned }: LentOutCardProps) {
 						</Link>
 
 						{/* Borrower info */}
-						<div className="mt-1 flex items-center gap-2">
+						<Link
+							href={`/friends/${loan.borrower_id}`}
+							className="mt-1 flex items-center gap-2 group"
+						>
 							<div className="flex h-5 w-5 items-center justify-center rounded-full bg-neutral-100">
 								{loan.borrower.avatar_url ? (
 									<img
@@ -120,10 +159,10 @@ export function LentOutCard({ loan, onMarkReturned }: LentOutCardProps) {
 									</svg>
 								)}
 							</div>
-							<span className="text-sm text-neutral-600 truncate">
+							<span className="text-sm text-neutral-600 truncate group-hover:underline">
 								Borrowed by {loan.borrower.display_name || loan.borrower.email}
 							</span>
-						</div>
+						</Link>
 
 						{/* Status & Duration */}
 						<div className="mt-2 flex flex-col gap-1">
@@ -145,11 +184,7 @@ export function LentOutCard({ loan, onMarkReturned }: LentOutCardProps) {
 								)}
 							</div>
 							<p className="text-xs text-neutral-500">
-								{loan.status === "active" && loan.picked_up_at
-									? `Picked up ${formatDate(loan.picked_up_at)}`
-									: loan.responded_at
-										? `Approved ${formatDate(loan.responded_at)}`
-										: null}
+								{latestTransaction.label} {formatDate(latestTransaction.date)}
 							</p>
 						</div>
 					</div>
@@ -161,52 +196,207 @@ export function LentOutCard({ loan, onMarkReturned }: LentOutCardProps) {
 					</div>
 				)}
 
-				{/* Mark as Returned button - only for active loans */}
+				{/* Handshake Status for Approved (Pickup Pending) */}
+				{loan.status === "approved" && (
+					<div className="mt-4 space-y-3">
+						{/* Pickup confirmation status */}
+						<div className="rounded-lg bg-neutral-50 p-3">
+							<p className="text-sm font-medium text-neutral-700 mb-2">Pickup Confirmation</p>
+							<div className="flex items-center gap-2 text-sm">
+								<span className={cn(
+									"inline-flex items-center gap-1",
+									borrowerConfirmedPickup ? "text-green-600" : "text-neutral-400"
+								)}>
+									{borrowerConfirmedPickup ? (
+										<svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+											<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+										</svg>
+									) : (
+										<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<circle cx="12" cy="12" r="10" strokeWidth="2" />
+										</svg>
+									)}
+									{loan.borrower.display_name || "Borrower"}
+								</span>
+								<span className="text-neutral-300">|</span>
+								<span className={cn(
+									"inline-flex items-center gap-1",
+									lenderConfirmedPickup ? "text-green-600" : "text-neutral-400"
+								)}>
+									{lenderConfirmedPickup ? (
+										<svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+											<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+										</svg>
+									) : (
+										<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<circle cx="12" cy="12" r="10" strokeWidth="2" />
+										</svg>
+									)}
+									You
+								</span>
+							</div>
+						</div>
+
+						{/* Confirm pickup button (if lender hasn't confirmed yet) */}
+						{!lenderConfirmedPickup && onConfirmPickup && (
+							<Button
+								variant="primary"
+								onClick={() => setShowPickupConfirm(true)}
+								className="w-full"
+							>
+								Confirm Handoff
+							</Button>
+						)}
+
+						{/* Waiting message if lender confirmed but borrower hasn't */}
+						{lenderConfirmedPickup && !borrowerConfirmedPickup && (
+							<p className="text-sm text-center text-neutral-500">
+								Waiting for {loan.borrower.display_name || "borrower"} to confirm pickup...
+							</p>
+						)}
+					</div>
+				)}
+
+				{/* Handshake Status for Active (Return Pending) */}
 				{loan.status === "active" && (
-					<div className="mt-4">
-						<Button
-							variant="primary"
-							onClick={() => setShowConfirm(true)}
-							className="w-full"
-						>
-							Mark as Returned
-						</Button>
+					<div className="mt-4 space-y-3">
+						{/* Return confirmation status (only show if someone has started return) */}
+						{(borrowerConfirmedReturn || lenderConfirmedReturn) && (
+							<div className="rounded-lg bg-neutral-50 p-3">
+								<p className="text-sm font-medium text-neutral-700 mb-2">Return Confirmation</p>
+								<div className="flex items-center gap-2 text-sm">
+									<span className={cn(
+										"inline-flex items-center gap-1",
+										borrowerConfirmedReturn ? "text-green-600" : "text-neutral-400"
+									)}>
+										{borrowerConfirmedReturn ? (
+											<svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+												<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+											</svg>
+										) : (
+											<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<circle cx="12" cy="12" r="10" strokeWidth="2" />
+											</svg>
+										)}
+										{loan.borrower.display_name || "Borrower"}
+									</span>
+									<span className="text-neutral-300">|</span>
+									<span className={cn(
+										"inline-flex items-center gap-1",
+										lenderConfirmedReturn ? "text-green-600" : "text-neutral-400"
+									)}>
+										{lenderConfirmedReturn ? (
+											<svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+												<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+											</svg>
+										) : (
+											<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<circle cx="12" cy="12" r="10" strokeWidth="2" />
+											</svg>
+										)}
+										You
+									</span>
+								</div>
+							</div>
+						)}
+
+						{/* Confirm return button (if lender hasn't confirmed yet) */}
+						{!lenderConfirmedReturn && onConfirmReturn && (
+							<Button
+								variant="primary"
+								onClick={() => setShowReturnConfirm(true)}
+								className="w-full"
+							>
+								Confirm Return
+							</Button>
+						)}
+
+						{/* Waiting message if lender confirmed but borrower hasn't */}
+						{lenderConfirmedReturn && !borrowerConfirmedReturn && (
+							<p className="text-sm text-center text-neutral-500">
+								Waiting for {loan.borrower.display_name || "borrower"} to confirm return...
+							</p>
+						)}
 					</div>
 				)}
 			</div>
 
-			{/* Confirmation Modal */}
-			{showConfirm && (
+			{/* Pickup Confirmation Modal */}
+			{showPickupConfirm && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 					<div
 						className="absolute inset-0 bg-black/50"
-						onClick={() => setShowConfirm(false)}
+						onClick={() => setShowPickupConfirm(false)}
+					/>
+					<div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+						<h3 className="text-lg font-semibold text-neutral-900">
+							Confirm Handoff
+						</h3>
+						<p className="mt-2 text-neutral-600">
+							Confirm that <span className="font-medium">{loan.borrower.display_name || "the borrower"}</span> has picked up{" "}
+							<span className="font-medium">{loan.tool.name}</span>?
+						</p>
+						<p className="mt-2 text-sm text-neutral-500">
+							Both you and the borrower must confirm for the handoff to complete.
+						</p>
+
+						<div className="mt-6 flex gap-3">
+							<Button
+								variant="secondary"
+								onClick={() => setShowPickupConfirm(false)}
+								className="flex-1"
+								disabled={isConfirming}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="primary"
+								onClick={handleConfirmPickup}
+								isLoading={isConfirming}
+								className="flex-1"
+							>
+								Yes, Confirm
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Return Confirmation Modal */}
+			{showReturnConfirm && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+					<div
+						className="absolute inset-0 bg-black/50"
+						onClick={() => setShowReturnConfirm(false)}
 					/>
 					<div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
 						<h3 className="text-lg font-semibold text-neutral-900">
 							Confirm Return
 						</h3>
 						<p className="mt-2 text-neutral-600">
-							Has <span className="font-medium">{loan.borrower.display_name || "the borrower"}</span> returned{" "}
+							Confirm that <span className="font-medium">{loan.borrower.display_name || "the borrower"}</span> has returned{" "}
 							<span className="font-medium">{loan.tool.name}</span>?
+						</p>
+						<p className="mt-2 text-sm text-neutral-500">
+							Both you and the borrower must confirm for the return to complete.
 						</p>
 
 						<div className="mt-6 flex gap-3">
 							<Button
 								variant="secondary"
-								onClick={() => setShowConfirm(false)}
+								onClick={() => setShowReturnConfirm(false)}
 								className="flex-1"
-								disabled={isMarking}
+								disabled={isConfirming}
 							>
 								Cancel
 							</Button>
 							<Button
 								variant="primary"
-								onClick={handleMarkReturned}
-								isLoading={isMarking}
+								onClick={handleConfirmReturn}
+								isLoading={isConfirming}
 								className="flex-1"
 							>
-								Yes, Returned
+								Yes, Confirm
 							</Button>
 						</div>
 					</div>

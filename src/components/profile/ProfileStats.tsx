@@ -25,7 +25,7 @@ export function ProfileStats() {
 	const statItems = [
 		{ value: stats.totalTools, label: "Tools", href: "/tools" },
 		{ value: stats.lendableTools, label: "Lendable", href: "/tools?lendable=true" },
-		{ value: stats.friendsCount, label: "Friends", href: "/friends" },
+		{ value: stats.friendsCount, label: "Buddies", href: "/friends" },
 	];
 
 	return (

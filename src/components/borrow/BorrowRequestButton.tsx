@@ -37,29 +37,41 @@ export function BorrowRequestButton({
 		refetch: refetchStatus,
 	} = useToolBorrowStatus(toolId, ownerId);
 
-	const { createRequest, joinWaitlist } = useBorrowRequests();
+	const { createRequest, joinWaitlist, markAsPickedUp } = useBorrowRequests();
 	const [isWaitlistMode, setIsWaitlistMode] = useState(false);
+	const [isPickupMode, setIsPickupMode] = useState(false);
 
-	const handleOpenModal = (waitlist = false) => {
+	const handleOpenModal = (mode: "request" | "waitlist" | "pickup" = "request") => {
 		setMessage("");
 		setSubmitError(null);
 		setSubmitSuccess(false);
-		setIsWaitlistMode(waitlist);
+		setIsWaitlistMode(mode === "waitlist");
+		setIsPickupMode(mode === "pickup");
 		setIsModalOpen(true);
 	};
 
 	const handleCloseModal = () => {
 		setIsModalOpen(false);
 		setIsWaitlistMode(false);
+		setIsPickupMode(false);
 	};
 
 	const handleSubmit = async () => {
 		setIsSubmitting(true);
 		setSubmitError(null);
 
-		const { error } = isWaitlistMode
-			? await joinWaitlist(toolId, ownerId, message || undefined)
-			: await createRequest(toolId, ownerId, message || undefined);
+		let error: string | null = null;
+
+		if (isPickupMode && existingRequest) {
+			const result = await markAsPickedUp(existingRequest.id);
+			error = result.error;
+		} else if (isWaitlistMode) {
+			const result = await joinWaitlist(toolId, ownerId, message || undefined);
+			error = result.error;
+		} else {
+			const result = await createRequest(toolId, ownerId, message || undefined);
+			error = result.error;
+		}
 
 		if (error) {
 			setSubmitError(error);
@@ -75,47 +87,48 @@ export function BorrowRequestButton({
 		setTimeout(() => {
 			setIsModalOpen(false);
 			setIsWaitlistMode(false);
+			setIsPickupMode(false);
 		}, 1500);
 	};
 
 	// Determine button state and text
-	const getButtonState = () => {
+	const getButtonState = (): { disabled: boolean; text: string; variant: "primary" | "secondary"; mode: "request" | "waitlist" | "pickup" } => {
 		if (statusLoading) {
-			return { disabled: true, text: "Loading...", variant: "secondary" as const, isWaitlist: false };
+			return { disabled: true, text: "Loading...", variant: "secondary", mode: "request" };
 		}
 
 		if (existingRequest) {
 			if (existingRequest.status === "pending") {
-				return { disabled: true, text: "Request Pending", variant: "secondary" as const, isWaitlist: false };
+				return { disabled: true, text: "Handshake Pending", variant: "secondary", mode: "request" };
 			}
 			if (existingRequest.status === "approved") {
-				return { disabled: true, text: "Approved - Ready for Pickup", variant: "secondary" as const, isWaitlist: false };
+				return { disabled: false, text: "I've Picked It Up", variant: "primary", mode: "pickup" };
 			}
 			if (existingRequest.status === "active") {
-				return { disabled: true, text: "Currently Borrowing", variant: "secondary" as const, isWaitlist: false };
+				return { disabled: true, text: "Currently Borrowing", variant: "secondary", mode: "request" };
 			}
 			if (existingRequest.status === "waitlisted") {
 				return {
 					disabled: true,
 					text: `On Waitlist (#${waitlistPosition})`,
-					variant: "secondary" as const,
-					isWaitlist: false,
+					variant: "secondary",
+					mode: "request",
 				};
 			}
 		}
 
 		if (canRequest) {
-			return { disabled: false, text: "Request to Borrow", variant: "primary" as const, isWaitlist: false };
+			return { disabled: false, text: "Request to Borrow", variant: "primary", mode: "request" };
 		}
 
 		if (canJoinWaitlist) {
 			const waitlistText = waitlistCount > 0
 				? `Join Waitlist (${waitlistCount} waiting)`
 				: "Join Waitlist";
-			return { disabled: false, text: waitlistText, variant: "secondary" as const, isWaitlist: true };
+			return { disabled: false, text: waitlistText, variant: "secondary", mode: "waitlist" };
 		}
 
-		return { disabled: true, text: "Unavailable", variant: "secondary" as const, isWaitlist: false };
+		return { disabled: true, text: "Unavailable", variant: "secondary", mode: "request" };
 	};
 
 	const buttonState = getButtonState();
@@ -123,7 +136,7 @@ export function BorrowRequestButton({
 	return (
 		<>
 			<Button
-				onClick={() => handleOpenModal(buttonState.isWaitlist)}
+				onClick={() => handleOpenModal(buttonState.mode)}
 				disabled={buttonState.disabled}
 				variant={buttonState.variant}
 				className="w-full"
@@ -160,14 +173,51 @@ export function BorrowRequestButton({
 									</svg>
 								</div>
 								<h3 className="text-lg font-semibold text-neutral-900">
-									{isWaitlistMode ? "Added to Waitlist!" : "Request Sent!"}
+									{isPickupMode ? "Marked as Picked Up!" : isWaitlistMode ? "Added to Waitlist!" : "Request Sent!"}
 								</h3>
 								<p className="mt-1 text-neutral-600">
-									{isWaitlistMode
+									{isPickupMode
+										? "You now have the tool. Remember to return it when you're done!"
+										: isWaitlistMode
 										? "You'll be notified when the tool becomes available."
 										: `${ownerName || "The owner"} will be notified of your request.`}
 								</p>
 							</div>
+						) : isPickupMode ? (
+							<>
+								<h2 className="text-xl font-semibold text-neutral-900">
+									Confirm Pickup
+								</h2>
+								<p className="mt-1 text-neutral-600">
+									Confirm that you&apos;ve picked up <span className="font-medium">{toolName}</span> from{" "}
+									{ownerName || "your buddy"}.
+								</p>
+
+								{submitError && (
+									<div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+										{submitError}
+									</div>
+								)}
+
+								<div className="mt-6 flex gap-3">
+									<Button
+										variant="secondary"
+										onClick={handleCloseModal}
+										className="flex-1"
+										disabled={isSubmitting}
+									>
+										Cancel
+									</Button>
+									<Button
+										variant="primary"
+										onClick={handleSubmit}
+										className="flex-1"
+										isLoading={isSubmitting}
+									>
+										I&apos;ve Picked It Up
+									</Button>
+								</div>
+							</>
 						) : (
 							<>
 								<h2 className="text-xl font-semibold text-neutral-900">
@@ -187,7 +237,7 @@ export function BorrowRequestButton({
 									) : (
 										<>
 											Request to borrow <span className="font-medium">{toolName}</span> from{" "}
-											{ownerName || "your friend"}.
+											{ownerName || "your buddy"}.
 										</>
 									)}
 								</p>

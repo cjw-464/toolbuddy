@@ -7,9 +7,10 @@ import { FriendRequestBadge } from "@/components/friends/FriendRequestBadge";
 import { BorrowRequestBadge } from "@/components/borrow/BorrowRequestBadge";
 
 const navItems = [
-	{ href: "/tools", label: "My Tools" },
-	{ href: "/friends", label: "Friends", badge: "friends" },
-	{ href: "/requests", label: "Requests", badge: "borrow" },
+	{ href: "/", label: "Home" },
+	{ href: "/tools", label: "Toolbox" },
+	{ href: "/friends", label: "Buddies", badge: "friends" },
+	{ href: "/requests", label: "Handshakes", badge: "borrow" },
 	{ href: "/profile", label: "Profile" },
 ];
 

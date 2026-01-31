@@ -11,6 +11,9 @@ interface OutgoingRequestCardProps {
 	request: OutgoingBorrowRequest;
 	onCancel: (requestId: string) => Promise<{ error: string | null }>;
 	onMarkPickedUp: (requestId: string) => Promise<{ error: string | null }>;
+	onCancelWaitlist?: (requestId: string) => Promise<{ error: string | null }>;
+	waitlistPosition?: number;
+	waitlistTotal?: number;
 }
 
 const statusConfig = {
@@ -55,9 +58,13 @@ export function OutgoingRequestCard({
 	request,
 	onCancel,
 	onMarkPickedUp,
+	onCancelWaitlist,
+	waitlistPosition,
+	waitlistTotal,
 }: OutgoingRequestCardProps) {
 	const [isCancelling, setIsCancelling] = useState(false);
 	const [isMarkingPickedUp, setIsMarkingPickedUp] = useState(false);
+	const [isLeavingWaitlist, setIsLeavingWaitlist] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const primaryImage =
@@ -84,6 +91,17 @@ export function OutgoingRequestCard({
 			setError(error);
 		}
 		setIsMarkingPickedUp(false);
+	};
+
+	const handleLeaveWaitlist = async () => {
+		if (!onCancelWaitlist) return;
+		setIsLeavingWaitlist(true);
+		setError(null);
+		const { error } = await onCancelWaitlist(request.id);
+		if (error) {
+			setError(error);
+		}
+		setIsLeavingWaitlist(false);
 	};
 
 	const formatDate = (dateString: string) => {
@@ -141,7 +159,10 @@ export function OutgoingRequestCard({
 					</Link>
 
 					{/* Lender info */}
-					<div className="mt-1 flex items-center gap-2">
+					<Link
+						href={`/friends/${request.lender_id}`}
+						className="mt-1 flex items-center gap-2 group"
+					>
 						<div className="flex h-5 w-5 items-center justify-center rounded-full bg-neutral-100">
 							{request.lender.avatar_url ? (
 								<img
@@ -165,24 +186,34 @@ export function OutgoingRequestCard({
 								</svg>
 							)}
 						</div>
-						<span className="text-sm text-neutral-600 truncate">
+						<span className="text-sm text-neutral-600 truncate group-hover:underline">
 							from {request.lender.display_name || request.lender.email}
 						</span>
-					</div>
+					</Link>
 
 					<p className="mt-1 text-xs text-neutral-500">
 						Requested {formatDate(request.requested_at)}
 					</p>
 
 					{/* Status badge */}
-					<span
-						className={cn(
-							"mt-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-							status.color
+					<div className="mt-2 flex items-center gap-2 flex-wrap">
+						<span
+							className={cn(
+								"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+								status.color
+							)}
+						>
+							{request.status === "waitlisted" && waitlistPosition
+								? `#${waitlistPosition} on Waitlist`
+								: status.label}
+						</span>
+						{/* Hot tool indicator */}
+						{request.status === "waitlisted" && waitlistTotal && waitlistTotal > 1 && (
+							<span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700">
+								🔥 This tool&apos;s hot!
+							</span>
 						)}
-					>
-						{status.label}
-					</span>
+					</div>
 				</div>
 			</div>
 
@@ -225,6 +256,22 @@ export function OutgoingRequestCard({
 					</Button>
 					<p className="mt-2 text-center text-xs text-neutral-500">
 						Mark as picked up once you have the tool
+					</p>
+				</div>
+			)}
+
+			{request.status === "waitlisted" && onCancelWaitlist && (
+				<div className="mt-4">
+					<Button
+						variant="secondary"
+						onClick={handleLeaveWaitlist}
+						isLoading={isLeavingWaitlist}
+						className="w-full"
+					>
+						Leave Waitlist
+					</Button>
+					<p className="mt-2 text-center text-xs text-neutral-500">
+						You&apos;ll be notified when the tool becomes available
 					</p>
 				</div>
 			)}

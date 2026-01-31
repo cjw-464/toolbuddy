@@ -42,8 +42,9 @@ export default function ToolDetailPage() {
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [selectedImage, setSelectedImage] = useState(0);
 	const [activeLoan, setActiveLoan] = useState<{ borrower: User; status: string; picked_up_at: string | null } | null>(null);
+	const [waitlistCount, setWaitlistCount] = useState(0);
 
-	// Check if tool is currently loaned out
+	// Check if tool is currently loaned out and get waitlist count
 	const checkActiveLoan = useCallback(async () => {
 		if (!toolId) return;
 
@@ -65,6 +66,15 @@ export default function ToolDetailPage() {
 		} else {
 			setActiveLoan(null);
 		}
+
+		// Get waitlist count
+		const { count } = await supabase
+			.from("borrow_requests")
+			.select("*", { count: "exact", head: true })
+			.eq("tool_id", toolId)
+			.eq("status", "waitlisted");
+
+		setWaitlistCount(count || 0);
 	}, [toolId]);
 
 	useEffect(() => {
@@ -268,6 +278,11 @@ export default function ToolDetailPage() {
 							Available to lend
 						</span>
 					) : null}
+					{waitlistCount > 0 && (
+						<span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700">
+							{waitlistCount} on waitlist
+						</span>
+					)}
 				</div>
 
 				{tool.notes && (

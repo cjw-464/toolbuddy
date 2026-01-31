@@ -99,8 +99,8 @@ export function FriendRequestCard({
 					)}
 					<p className="text-sm text-neutral-500 truncate">
 						{type === "incoming"
-							? "Wants to be your friend"
-							: "Friend request sent"}
+							? "Wants to be your buddy"
+							: "Buddy request sent"}
 					</p>
 				</div>
 			</div>

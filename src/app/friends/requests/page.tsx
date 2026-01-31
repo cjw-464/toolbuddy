@@ -42,10 +42,10 @@ export default function FriendRequestsPage() {
 							d="M15 19l-7-7 7-7"
 						/>
 					</svg>
-					Back to friends
+					Back to buddies
 				</Link>
 				<h1 className="text-2xl font-semibold text-neutral-900">
-					Friend Requests
+					Buddy Requests
 				</h1>
 			</header>
 
@@ -129,8 +129,8 @@ export default function FriendRequestsPage() {
 					</h3>
 					<p className="mt-1 text-neutral-600">
 						{activeTab === "received"
-							? "When someone sends you a friend request, it will appear here."
-							: "Friend requests you send will appear here until accepted."}
+							? "When someone sends you a buddy request, it will appear here."
+							: "Buddy requests you send will appear here until accepted."}
 					</p>
 				</div>
 			) : (

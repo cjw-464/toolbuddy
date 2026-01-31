@@ -14,15 +14,21 @@ export default function Home() {
 			<section className="grid gap-4">
 				<Card
 					label="Inventory"
-					title="My Tools"
-					description="Add, browse, and search your tools."
+					title="Toolbox"
+					description="Your tools and what buddies are lending."
 					href="/tools"
 				/>
 				<Card
 					label="Social"
-					title="Friends"
-					description="See what friends are willing to lend."
+					title="Buddies"
+					description="See what buddies are willing to lend."
 					href="/friends"
+				/>
+				<Card
+					label="Lending"
+					title="Handshakes"
+					description="Manage your borrows and loans."
+					href="/requests"
 				/>
 				<Card
 					label="Account"

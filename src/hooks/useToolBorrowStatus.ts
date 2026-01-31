@@ -74,9 +74,10 @@ export function useToolBorrowStatus(toolId: string | undefined, ownerId: string 
 
 		console.log("[useToolBorrowStatus] toolId:", toolId, "ownerId:", ownerId);
 		console.log("[useToolBorrowStatus] borrow_requests data:", data);
+		console.log("[useToolBorrowStatus] fetchError:", fetchError, "code:", fetchError?.code, "message:", fetchError?.message, "details:", fetchError?.details, "hint:", fetchError?.hint);
 
 		if (fetchError) {
-			console.error("[useToolBorrowStatus] error:", fetchError);
+			console.error("[useToolBorrowStatus] error:", JSON.stringify(fetchError, null, 2));
 			setError(fetchError.message);
 			setLoading(false);
 			return;

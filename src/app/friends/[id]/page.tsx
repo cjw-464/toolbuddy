@@ -4,8 +4,10 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useFriendTools } from "@/hooks/useFriendTools";
+import { useProfile } from "@/hooks/useProfile";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { cn } from "@/lib/utils";
+import { calculateDistance, formatDistance } from "@/lib/distance";
 
 const categoryLabels: Record<string, string> = {
 	"power-tools": "Power Tools",
@@ -30,6 +32,21 @@ export default function FriendToolsPage() {
 	const params = useParams();
 	const friendId = params.id as string;
 	const { tools, friend, loading, error } = useFriendTools(friendId);
+	const { profile } = useProfile();
+
+	// Calculate distance between current user and friend
+	const distance =
+		profile?.latitude &&
+		profile?.longitude &&
+		friend?.latitude &&
+		friend?.longitude
+			? calculateDistance(
+					profile.latitude,
+					profile.longitude,
+					friend.latitude,
+					friend.longitude
+			  )
+			: null;
 
 	if (loading) {
 		return (
@@ -65,13 +82,13 @@ export default function FriendToolsPage() {
 						{error || "User not found"}
 					</h1>
 					<p className="mt-2 text-neutral-600">
-						You may not be friends with this user.
+						You may not be buddies with this user.
 					</p>
 					<Link
 						href="/friends"
 						className="mt-4 inline-block text-[#333333] underline"
 					>
-						Back to friends
+						Back to buddies
 					</Link>
 				</div>
 				<BottomNav />
@@ -99,7 +116,7 @@ export default function FriendToolsPage() {
 							d="M15 19l-7-7 7-7"
 						/>
 					</svg>
-					Back to friends
+					Back to buddies
 				</Link>
 
 				<div className="flex items-center gap-4">
@@ -107,7 +124,7 @@ export default function FriendToolsPage() {
 						{friend.avatar_url ? (
 							<img
 								src={friend.avatar_url}
-								alt={friend.display_name || "Friend"}
+								alt={friend.display_name || "Buddy"}
 								className="h-14 w-14 rounded-full object-cover"
 							/>
 						) : (
@@ -126,13 +143,40 @@ export default function FriendToolsPage() {
 							</svg>
 						)}
 					</div>
-					<div>
-						<h1 className="text-2xl font-semibold text-neutral-900">
-							{friend.display_name || "Friend"}&apos;s Tools
-						</h1>
+					<div className="flex-1">
+						<div className="flex items-center justify-between">
+							<h1 className="text-2xl font-semibold text-neutral-900">
+								{friend.display_name || "Buddy"}&apos;s Tools
+							</h1>
+							{distance !== null && (
+								<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+									<svg
+										className="h-4 w-4"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+										/>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+										/>
+									</svg>
+									{formatDistance(distance)} away
+								</span>
+							)}
+						</div>
 						<p className="text-sm text-neutral-600">
 							{tools.length} {tools.length === 1 ? "tool" : "tools"} available to
 							borrow
+							{friend.location && <span className="ml-1">· {friend.location}</span>}
 						</p>
 					</div>
 				</div>
@@ -159,7 +203,7 @@ export default function FriendToolsPage() {
 						No tools available
 					</h3>
 					<p className="mt-1 text-neutral-600">
-						{friend.display_name || "This friend"} hasn&apos;t marked any tools as
+						{friend.display_name || "This buddy"} hasn&apos;t marked any tools as
 						available for lending yet.
 					</p>
 				</div>

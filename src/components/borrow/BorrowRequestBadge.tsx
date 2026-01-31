@@ -19,7 +19,7 @@ export function BorrowRequestBadge({ className }: BorrowRequestBadgeProps) {
 		<Link
 			href="/requests"
 			className={className}
-			aria-label={`${count} pending borrow request${count === 1 ? "" : "s"}`}
+			aria-label={`${count} pending handshake${count === 1 ? "" : "s"}`}
 		>
 			<span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FFCC00] px-1.5 text-xs font-medium text-[#333333]">
 				{count > 99 ? "99+" : count}

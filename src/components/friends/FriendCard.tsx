@@ -37,7 +37,7 @@ export function FriendCard({ friend, userCoordinates, className }: FriendCardPro
 				{friend.avatar_url ? (
 					<img
 						src={friend.avatar_url}
-						alt={friend.display_name || "Friend"}
+						alt={friend.display_name || "Buddy"}
 						className="h-12 w-12 rounded-full object-cover"
 					/>
 				) : (

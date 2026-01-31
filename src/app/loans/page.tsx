@@ -16,7 +16,25 @@ export default function LoansPage() {
 
 	const { lentOut, borrowed, lentOutCount, borrowedCount, loading, error } =
 		useLoans();
-	const { markAsReturned, returnTool } = useBorrowRequests();
+	const { confirmPickup, confirmReturn } = useBorrowRequests();
+
+	// Wrapper functions for borrower confirmation
+	const handleBorrowerConfirmPickup = async (requestId: string) => {
+		return confirmPickup(requestId, "borrower");
+	};
+
+	const handleBorrowerConfirmReturn = async (requestId: string) => {
+		return confirmReturn(requestId, "borrower");
+	};
+
+	// Wrapper functions for lender confirmation
+	const handleLenderConfirmPickup = async (requestId: string) => {
+		return confirmPickup(requestId, "lender");
+	};
+
+	const handleLenderConfirmReturn = async (requestId: string) => {
+		return confirmReturn(requestId, "lender");
+	};
 
 	return (
 		<main className="min-h-screen bg-neutral-50 px-5 py-8">
@@ -144,14 +162,48 @@ export default function LoansPage() {
 							</p>
 						</div>
 					) : (
-						<div className="space-y-4">
-							{lentOut.map((loan) => (
-								<LentOutCard
-									key={loan.id}
-									loan={loan}
-									onMarkReturned={markAsReturned}
-								/>
-							))}
+						<div className="space-y-6">
+							{/* Pending Pickup Section */}
+							{lentOut.filter((loan) => loan.status === "approved").length > 0 && (
+								<div>
+									<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+										Pending Pickup
+									</h2>
+									<div className="space-y-4">
+										{lentOut
+											.filter((loan) => loan.status === "approved")
+											.map((loan) => (
+												<LentOutCard
+													key={loan.id}
+													loan={loan}
+													onConfirmPickup={handleLenderConfirmPickup}
+													onConfirmReturn={handleLenderConfirmReturn}
+												/>
+											))}
+									</div>
+								</div>
+							)}
+
+							{/* Currently Lent Section */}
+							{lentOut.filter((loan) => loan.status === "active").length > 0 && (
+								<div>
+									<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+										Currently Lent Out
+									</h2>
+									<div className="space-y-4">
+										{lentOut
+											.filter((loan) => loan.status === "active")
+											.map((loan) => (
+												<LentOutCard
+													key={loan.id}
+													loan={loan}
+													onConfirmPickup={handleLenderConfirmPickup}
+													onConfirmReturn={handleLenderConfirmReturn}
+												/>
+											))}
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 				</>
@@ -191,14 +243,48 @@ export default function LoansPage() {
 							</Link>
 						</div>
 					) : (
-						<div className="space-y-4">
-							{borrowed.map((loan) => (
-								<BorrowedCard
-									key={loan.id}
-									loan={loan}
-									onReturnTool={returnTool}
-								/>
-							))}
+						<div className="space-y-6">
+							{/* Pending Pickup Section */}
+							{borrowed.filter((loan) => loan.status === "approved").length > 0 && (
+								<div>
+									<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+										Pending Pickup
+									</h2>
+									<div className="space-y-4">
+										{borrowed
+											.filter((loan) => loan.status === "approved")
+											.map((loan) => (
+												<BorrowedCard
+													key={loan.id}
+													loan={loan}
+													onConfirmPickup={handleBorrowerConfirmPickup}
+													onConfirmReturn={handleBorrowerConfirmReturn}
+												/>
+											))}
+									</div>
+								</div>
+							)}
+
+							{/* Currently Borrowing Section */}
+							{borrowed.filter((loan) => loan.status === "active").length > 0 && (
+								<div>
+									<h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+										Currently Borrowing
+									</h2>
+									<div className="space-y-4">
+										{borrowed
+											.filter((loan) => loan.status === "active")
+											.map((loan) => (
+												<BorrowedCard
+													key={loan.id}
+													loan={loan}
+													onConfirmPickup={handleBorrowerConfirmPickup}
+													onConfirmReturn={handleBorrowerConfirmReturn}
+												/>
+											))}
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 				</>

@@ -130,8 +130,17 @@ export interface BorrowRequest {
 	message: string | null;
 	requested_at: string;
 	responded_at: string | null;
-	picked_up_at: string | null;
-	returned_at: string | null;
+	// Handshake confirmation fields for pickup
+	borrower_confirmed_pickup_at: string | null;
+	lender_confirmed_pickup_at: string | null;
+	picked_up_at: string | null; // Set when both confirm pickup
+	// Handshake confirmation fields for return
+	borrower_confirmed_return_at: string | null;
+	lender_confirmed_return_at: string | null;
+	returned_at: string | null; // Set when both confirm return
+	// QR code for handshake (future use)
+	pickup_code: string | null;
+	return_code: string | null;
 	created_at: string;
 	updated_at: string;
 }
