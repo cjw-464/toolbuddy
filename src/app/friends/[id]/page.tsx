@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useFriendTools } from "@/hooks/useFriendTools";
 import { useProfile } from "@/hooks/useProfile";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 import { calculateDistance, formatDistance } from "@/lib/distance";
 
@@ -50,7 +50,7 @@ export default function FriendToolsPage() {
 
 	if (loading) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="animate-pulse space-y-4">
 					<div className="h-6 w-32 rounded bg-neutral-200" />
 					<div className="h-8 w-48 rounded bg-neutral-200" />
@@ -69,14 +69,13 @@ export default function FriendToolsPage() {
 						))}
 					</div>
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
 	if (error || !friend) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="text-center">
 					<h1 className="text-xl font-semibold text-neutral-900">
 						{error || "User not found"}
@@ -91,13 +90,12 @@ export default function FriendToolsPage() {
 						Back to buddies
 					</Link>
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6">
 				<Link
 					href="/friends"
@@ -276,10 +274,6 @@ export default function FriendToolsPage() {
 					})}
 				</div>
 			)}
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

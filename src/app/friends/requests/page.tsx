@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useFriendRequests } from "@/hooks/useFriendRequests";
 import { FriendRequestCard } from "@/components/friends/FriendRequestCard";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 
 type Tab = "received" | "sent";
@@ -23,7 +23,7 @@ export default function FriendRequestsPage() {
 	const requests = activeTab === "received" ? incoming : outgoing;
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6">
 				<Link
 					href="/friends"
@@ -147,10 +147,6 @@ export default function FriendRequestsPage() {
 					))}
 				</div>
 			)}
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

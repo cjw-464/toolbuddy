@@ -7,7 +7,7 @@ import { IncomingRequestCard } from "@/components/borrow/IncomingRequestCard";
 import { OutgoingRequestCard } from "@/components/borrow/OutgoingRequestCard";
 import { LentOutCard } from "@/components/borrow/LentOutCard";
 import { BorrowedCard } from "@/components/borrow/BorrowedCard";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 
 type TabType = "lent-out" | "borrowed";
@@ -26,6 +26,7 @@ export default function RequestsPage() {
 		cancelRequest,
 		markAsPickedUp,
 		cancelWaitlist,
+		removeFromWaitlist,
 		getWaitlistInfo,
 		confirmPickup,
 		confirmReturn,
@@ -61,7 +62,7 @@ export default function RequestsPage() {
 	};
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6">
 				<h1 className="text-2xl font-semibold text-neutral-900">
 					Handshakes
@@ -189,6 +190,7 @@ export default function RequestsPage() {
 										request={request}
 										onApprove={approveRequest}
 										onDecline={declineRequest}
+										onRemoveFromWaitlist={removeFromWaitlist}
 									/>
 								))}
 							</div>
@@ -324,10 +326,6 @@ export default function RequestsPage() {
 					)}
 				</div>
 			)}
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

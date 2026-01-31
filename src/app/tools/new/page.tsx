@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { ToolForm } from "@/components/tools/ToolForm";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 
 export default function NewToolPage() {
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6">
 				<Link
 					href="/tools"
@@ -36,10 +36,6 @@ export default function NewToolPage() {
 			<div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
 				<ToolForm mode="create" />
 			</div>
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

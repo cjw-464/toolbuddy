@@ -6,7 +6,7 @@ import { useLoans } from "@/hooks/useLoans";
 import { useBorrowRequests } from "@/hooks/useBorrowRequests";
 import { LentOutCard } from "@/components/borrow/LentOutCard";
 import { BorrowedCard } from "@/components/borrow/BorrowedCard";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 
 type TabType = "lent" | "borrowed";
@@ -37,7 +37,7 @@ export default function LoansPage() {
 	};
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6">
 				<div className="flex items-center gap-3">
 					<Link
@@ -289,10 +289,6 @@ export default function LoansPage() {
 					)}
 				</>
 			)}
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useTool } from "@/hooks/useTool";
 import { ToolForm } from "@/components/tools/ToolForm";
 import { Button } from "@/components/ui/Button";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 
@@ -94,21 +94,20 @@ export default function ToolDetailPage() {
 
 	if (loading) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="animate-pulse space-y-4">
 					<div className="h-6 w-32 rounded bg-neutral-200" />
 					<div className="aspect-[4/3] rounded-2xl bg-neutral-200" />
 					<div className="h-8 w-48 rounded bg-neutral-200" />
 					<div className="h-4 w-32 rounded bg-neutral-200" />
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
 	if (error || !tool) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="text-center">
 					<h1 className="text-xl font-semibold text-neutral-900">Tool not found</h1>
 					<p className="mt-2 text-neutral-600">
@@ -118,14 +117,13 @@ export default function ToolDetailPage() {
 						<Button>Back to tools</Button>
 					</Link>
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
 	if (isEditing) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<header className="mb-6">
 					<button
 						onClick={() => setIsEditing(false)}
@@ -152,10 +150,7 @@ export default function ToolDetailPage() {
 				<div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
 					<ToolForm tool={tool} mode="edit" onEditSuccess={() => setIsEditing(false)} />
 				</div>
-
-				<BottomNav />
-				<div className="h-24" />
-			</main>
+			</AppShell>
 		);
 	}
 
@@ -163,7 +158,7 @@ export default function ToolDetailPage() {
 	const primaryImage = tool.images?.[selectedImage] || tool.images?.[0];
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6">
 				<Link
 					href="/tools"
@@ -341,10 +336,6 @@ export default function ToolDetailPage() {
 					</div>
 				</div>
 			)}
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

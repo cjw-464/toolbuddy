@@ -1,10 +1,12 @@
+"use client";
+
 import { Card } from "@/components/ui/Card";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 
 export default function Home() {
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
-			<header className="mb-8">
+		<AppShell>
+			<header className="mb-6">
 				<h1 className="text-3xl font-semibold text-neutral-900">Toolbuddy</h1>
 				<p className="mt-2 text-neutral-600">
 					Your toolbox, organized. Friendly sharing with people you trust.
@@ -37,10 +39,6 @@ export default function Home() {
 					href="/profile"
 				/>
 			</section>
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

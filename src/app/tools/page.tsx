@@ -9,7 +9,7 @@ import { ToolGrid } from "@/components/tools/ToolGrid";
 import { ToolFilters } from "@/components/tools/ToolFilters";
 import { AvailableToolsSection } from "@/components/tools/AvailableToolsSection";
 import { Button } from "@/components/ui/Button";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 import type { ToolCategory } from "@/types";
 
@@ -132,14 +132,10 @@ function ToolsLoading() {
 
 export default function ToolsPage() {
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<Suspense fallback={<ToolsLoading />}>
 				<ToolsContent />
 			</Suspense>
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

@@ -7,11 +7,11 @@ import { FriendRequestBadge } from "@/components/friends/FriendRequestBadge";
 import { BorrowRequestBadge } from "@/components/borrow/BorrowRequestBadge";
 
 const navItems = [
-	{ href: "/", label: "Home" },
-	{ href: "/tools", label: "Toolbox" },
-	{ href: "/friends", label: "Buddies", badge: "friends" },
-	{ href: "/requests", label: "Handshakes", badge: "borrow" },
-	{ href: "/profile", label: "Profile" },
+	{ href: "/", label: "🏠 Home" },
+	{ href: "/tools", label: "🧰 Toolbox" },
+	{ href: "/friends", label: "👥 Buddies", badge: "friends" },
+	{ href: "/requests", label: "🤝 Handshakes", badge: "borrow" },
+	{ href: "/profile", label: "👤 Profile" },
 ];
 
 export function BottomNav() {

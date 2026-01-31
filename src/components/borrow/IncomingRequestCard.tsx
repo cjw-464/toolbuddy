@@ -11,15 +11,18 @@ interface IncomingRequestCardProps {
 	request: IncomingBorrowRequest;
 	onApprove: (requestId: string) => Promise<{ error: string | null }>;
 	onDecline: (requestId: string) => Promise<{ error: string | null }>;
+	onRemoveFromWaitlist?: (requestId: string) => Promise<{ error: string | null }>;
 }
 
 export function IncomingRequestCard({
 	request,
 	onApprove,
 	onDecline,
+	onRemoveFromWaitlist,
 }: IncomingRequestCardProps) {
 	const [isApproving, setIsApproving] = useState(false);
 	const [isDeclining, setIsDeclining] = useState(false);
+	const [isRemovingFromWaitlist, setIsRemovingFromWaitlist] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const primaryImage =
@@ -44,6 +47,17 @@ export function IncomingRequestCard({
 			setError(error);
 		}
 		setIsDeclining(false);
+	};
+
+	const handleRemoveFromWaitlist = async () => {
+		if (!onRemoveFromWaitlist) return;
+		setIsRemovingFromWaitlist(true);
+		setError(null);
+		const { error } = await onRemoveFromWaitlist(request.id);
+		if (error) {
+			setError(error);
+		}
+		setIsRemovingFromWaitlist(false);
 	};
 
 	const formatDate = (dateString: string) => {
@@ -189,9 +203,21 @@ export function IncomingRequestCard({
 
 			{request.status === "waitlisted" && (
 				<div className="mt-3">
-					<span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700">
-						On waitlist
-					</span>
+					<div className="flex items-center justify-between">
+						<span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700">
+							On waitlist
+						</span>
+						{onRemoveFromWaitlist && (
+							<Button
+								variant="secondary"
+								onClick={handleRemoveFromWaitlist}
+								isLoading={isRemovingFromWaitlist}
+								className="text-red-600 hover:bg-red-50"
+							>
+								Remove
+							</Button>
+						)}
+					</div>
 				</div>
 			)}
 		</div>

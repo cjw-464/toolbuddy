@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useToolBorrowStatus } from "@/hooks/useToolBorrowStatus";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { BorrowRequestButton } from "@/components/borrow/BorrowRequestButton";
 import { cn } from "@/lib/utils";
 import { calculateDistance, formatDistance } from "@/lib/distance";
@@ -150,21 +150,20 @@ export default function FriendToolDetailPage() {
 
 	if (loading || authLoading) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="animate-pulse space-y-4">
 					<div className="h-6 w-32 rounded bg-neutral-200" />
 					<div className="aspect-[4/3] rounded-2xl bg-neutral-200" />
 					<div className="h-8 w-48 rounded bg-neutral-200" />
 					<div className="h-4 w-32 rounded bg-neutral-200" />
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
 	if (error || !tool || !friend) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="text-center">
 					<h1 className="text-xl font-semibold text-neutral-900">
 						{error || "Tool not found"}
@@ -179,8 +178,7 @@ export default function FriendToolDetailPage() {
 						Back to friend&apos;s tools
 					</Link>
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
@@ -188,7 +186,7 @@ export default function FriendToolDetailPage() {
 	const primaryImage = tool.images?.[selectedImage] || tool.images?.[0];
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6">
 				<Link
 					href={`/friends/${friendId}`}
@@ -373,10 +371,6 @@ export default function FriendToolDetailPage() {
 					/>
 				</div>
 			</div>
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

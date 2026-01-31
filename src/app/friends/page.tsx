@@ -11,7 +11,7 @@ import { UserSearchResult } from "@/components/friends/UserSearchResult";
 import { AvailableToolsSection } from "@/components/tools/AvailableToolsSection";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 
 type TabType = "friends" | "tools";
@@ -60,7 +60,7 @@ export default function FriendsPage() {
 	}, [clearResults]);
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			<header className="mb-6 flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold text-neutral-900">Buddies</h1>
@@ -244,10 +244,6 @@ export default function FriendsPage() {
 
 			{/* Available Tools Tab */}
 			{activeTab === "tools" && <AvailableToolsSection />}
-
-			<BottomNav />
-
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

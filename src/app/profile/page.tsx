@@ -7,7 +7,7 @@ import { AvatarUpload } from "@/components/profile/AvatarUpload";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { Button } from "@/components/ui/Button";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 
 export default function ProfilePage() {
 	const { signOut } = useAuth();
@@ -32,7 +32,7 @@ export default function ProfilePage() {
 
 	if (loading) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="animate-pulse space-y-6">
 					<div className="flex items-center justify-between">
 						<div className="h-8 w-24 rounded bg-neutral-200" />
@@ -49,14 +49,13 @@ export default function ProfilePage() {
 						))}
 					</div>
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
 	if (!profile) {
 		return (
-			<main className="min-h-screen bg-neutral-50 px-5 py-8">
+			<AppShell>
 				<div className="text-center">
 					<h1 className="text-xl font-semibold text-neutral-900">
 						Profile not found
@@ -65,13 +64,12 @@ export default function ProfilePage() {
 						Please try signing in again.
 					</p>
 				</div>
-				<BottomNav />
-			</main>
+			</AppShell>
 		);
 	}
 
 	return (
-		<main className="min-h-screen bg-neutral-50 px-5 py-8">
+		<AppShell>
 			{/* Header */}
 			<header className="mb-8 flex items-center justify-between">
 				<h1 className="text-2xl font-semibold text-neutral-900">Profile</h1>
@@ -155,11 +153,6 @@ export default function ProfilePage() {
 					Sign Out
 				</Button>
 			</div>
-
-			<BottomNav />
-
-			{/* Bottom spacing for nav */}
-			<div className="h-24" />
-		</main>
+		</AppShell>
 	);
 }

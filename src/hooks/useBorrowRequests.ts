@@ -487,6 +487,27 @@ export function useBorrowRequests() {
 		return { error: null };
 	};
 
+	// Remove someone from waitlist (as lender)
+	const removeFromWaitlist = async (requestId: string) => {
+		if (!user) return { error: "Not authenticated" };
+
+		const supabase = createClient();
+
+		const { error } = await supabase
+			.from("borrow_requests")
+			.delete()
+			.eq("id", requestId)
+			.eq("lender_id", user.id)
+			.eq("status", "waitlisted");
+
+		if (error) {
+			return { error: error.message };
+		}
+
+		await fetchRequests();
+		return { error: null };
+	};
+
 	// Count of pending incoming requests (for badge)
 	const pendingIncomingCount = incoming.filter((r) => r.status === "pending").length;
 
@@ -515,6 +536,7 @@ export function useBorrowRequests() {
 		returnTool,
 		joinWaitlist,
 		cancelWaitlist,
+		removeFromWaitlist,
 		// Waitlist info
 		getWaitlistInfo,
 	};
